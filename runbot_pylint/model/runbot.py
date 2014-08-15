@@ -59,7 +59,28 @@ class RunbotBuild(osv.osv):
 
     def create(self, cr, uid, values, context=None):
         """
-        This method set configuration of pylint.
+        Create a new record for the model.
+
+        The values for the new record are initialized using the ``vals``
+        argument, and if necessary the result of ``default_get()``.
+
+        :param cr: database cursor
+        :param user: current user id
+        :type user: integer
+        :param vals: field values for new record, e.g {'field_name': field_value, ...}
+        :type vals: dictionary
+        :param context: optional context arguments, e.g. {'lang': 'en_us', 'tz': 'UTC', ...}
+        :type context: dictionary
+        :return: id of new record created
+        :raise AccessError: * if user has no create rights on the requested object
+                            * if user tries to bypass access rules for create on the requested object
+        :raise ValidateError: if user tries to enter invalid value for a field that is not in selection
+        :raise UserError: if a loop would be created in a hierarchy of objects a result of the operation (such as setting an object as its own parent)
+
+        **Note**: The type of field values to pass in ``vals`` for relationship fields is specific.
+        Please see the description of the :py:meth:`~osv.osv.osv.write` method for details about the possible values and how
+        to specify them.
+
         """
         super(RunbotBuild, self).create(cr, uid, values, context=context)
         branch_id = self.pool.get('runbot.branch').browse(cr, uid,

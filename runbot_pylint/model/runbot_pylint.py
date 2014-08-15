@@ -99,6 +99,23 @@ class PylintError(osv.osv):
                     context=None, limit=100):
         """
         This method is used to search errors by code or name.
+        Search for records that have a display name matching the given ``name`` pattern if compared
+           with the given ``operator``, while also matching the optional search domain (``args``).
+           This is used for example to provide suggestions based on a partial value for a relational
+           field.
+           Sometimes be seen as the inverse function of :meth:`~.name_get`, but it is not
+           guaranteed to be.
+
+           This method is equivalent to calling :meth:`~.search` with a search domain based on ``name``
+           and then :meth:`~.name_get` on the result of the search.
+
+           :param list args: optional search domain (see :meth:`~.search` for syntax),
+                             specifying further restrictions
+           :param str operator: domain operator for matching the ``name`` pattern, such as ``'like'``
+                                or ``'='``.
+           :param int limit: optional max number of records to return
+           :rtype: list
+           :return: list of pairs ``(id,text_repr)`` for all matching records.
         """
         if not args:
             args = []
@@ -135,6 +152,14 @@ class PylintError(osv.osv):
         """
         This method is used to show in the views the error with the following
             format: code error + description.
+        Returns the preferred display value (text representation) for the records with the
+           given ``ids``. By default this will be the value of the ``name`` column, unless
+           the model implements a custom behavior.
+           Can sometimes be seen as the inverse function of :meth:`~.name_search`, but it is not
+           guaranteed to be.
+
+           :rtype: list(tuple)
+           :return: list of pairs ``(id,text_repr)`` for all records with the given ``ids``.
         """
         if not ids:
             return []
