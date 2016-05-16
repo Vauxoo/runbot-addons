@@ -54,34 +54,35 @@ class RunbotBuild(models.Model):
     @api.depends('state')
     def _get_introspection(self):
         for build in self:
+            url = "http://%s/instance_introspection.json" % (build.domain + '.')
             try:
                 build.introspection = str(json.dumps({'status': 'fail', 'error': 'Not computed yet'}))
                 if build.dest and build.domain.find('False') < 0:
-                    url = "http://%s?db=%s-all/instance_introspection.json" % (build.domain + '.', build.dest)
                     build.introspection = str(json.loads(requests.get(url).text))
             except Exception as e:
                 build.introspection = str(json.dumps({'status': 'failV',
-                'error': e.message, 'url':
-                "http://%s?db=%s-all/instance_introspection.json" %
-                (build.domain + '.', build.dest)}))
+                'error': e.message, 'url': url}))
 
     @api.depends('introspection')
     def _get_introspection_html(self):
         for build in self:
 
+            url = "http://%s/instance_introspection.json" % (build.domain + '.')
             try:
                 introspection_dict = {'status': 'fail', 'error': 'Not computed yet'}
                 if build.dest and build.domain.find('False') < 0:
-                    url = "http://%s?db=%s-all/instance_introspection.json" % (build.domain + '.', build.dest)
                     introspection_dict = json.loads(requests.get(url))
             except Exception as e:
-                introspection_dict = { 'status': 'fail', 'error': e.message, 'url':
-                "http://%s?db=%s-all/instance_introspection.json" % (build.domain + '.', build.dest)
-                }
+                introspection_dict = { 'status': 'fail', 'error': e.message, 'url': url}
             introspection_html = ''
-            print introspection_dict
-            for key in introspection_dict:
-                introspection_html += '<br/><span class="json-key">%s</span>: <span class="json-value">%s</span>,<br/>' % (key, introspection_dict[key])
+            if isinstance(introspection_dict, dict):
+                for key in introspection_dict:
+                    introspection_html += '<br/><span class="json-key">%s</span>: <span class="json-value">%s</span>,<br/>' % (key, introspection_dict[key])
+            if isinstance(introspection_dict, list):
+                for el in introspection_dict:
+                    introspection_html += "}<br/>{"
+                    for key in el:
+                        introspection_html += '<br/><span class="json-key">%s</span>: <span class="json-value">%s</span>,<br/>' % (key, el[key])
 
             build.introspection_html = introspection_html
 
