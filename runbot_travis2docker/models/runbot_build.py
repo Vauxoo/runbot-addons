@@ -57,10 +57,33 @@ class RunbotBuild(models.Model):
             try:
                 build.introspection = str(json.dumps({'status': 'fail', 'error': 'Not computed yet'}))
                 if build.dest and build.domain.find('False') < 0:
-                    url = "http://%s?db=%s-all/instance_introspection.json" % (build.domain, build.dest)
+                    url = "http://%s?db=%s-all/instance_introspection.json" % (build.domain + '.', build.dest)
                     build.introspection = str(json.loads(requests.get(url).text))
             except Exception as e:
-                build.introspection = str(json.dumps({'status': 'fail', 'error': e.message}))
+                build.introspection = str(json.dumps({'status': 'failV',
+                'error': e.message, 'url':
+                "http://%s?db=%s-all/instance_introspection.json" %
+                (build.domain + '.', build.dest)}))
+
+    @api.depends('introspection')
+    def _get_introspection_html(self):
+        for build in self:
+
+            try:
+                introspection_dict = {'status': 'fail', 'error': 'Not computed yet'}
+                if build.dest and build.domain.find('False') < 0:
+                    url = "http://%s?db=%s-all/instance_introspection.json" % (build.domain + '.', build.dest)
+                    introspection_dict = json.loads(requests.get(url))
+            except Exception as e:
+                introspection_dict = { 'status': 'fail', 'error': e.message, 'url':
+                "http://%s?db=%s-all/instance_introspection.json" % (build.domain + '.', build.dest)
+                }
+            introspection_html = ''
+            print introspection_dict
+            for key in introspection_dict:
+                introspection_html += '<br/><span class="json-key">%s</span>: <span class="json-value">%s</span>,<br/>' % (key, introspection_dict[key])
+
+            build.introspection_html = introspection_html
 
     dockerfile_path = fields.Char(
         help='Dockerfile path created by travis2docker')
@@ -75,6 +98,7 @@ class RunbotBuild(models.Model):
     branch_short_name = fields.Char(help='Branch short name e.g. pull/1, 8.0')
     introspection = fields.Text(help='Introspection', store=True,
                                  compute='_get_introspection')
+    introspection_html = fields.Html(help='Introspection', compute='_get_introspection_html')
 
     def get_docker_image(self, branch_closest=None):
         self.ensure_one()
