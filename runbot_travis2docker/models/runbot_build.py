@@ -54,37 +54,12 @@ class RunbotBuild(models.Model):
     @api.depends('state')
     def _get_introspection(self):
         for build in self:
-            url = "http://%s/instance_introspection.json" % (build.domain + '.')
+            url = "http://%s/instance_introspection.json" % (build.domain)
             try:
-                build.introspection = str(json.dumps({'status': 'fail', 'error': 'Not computed yet'}))
-                if build.dest and build.domain.find('False') < 0:
-                    build.introspection = str(json.loads(requests.get(url).text))
-            except Exception as e:
-                build.introspection = str(json.dumps({'status': 'failV',
-                'error': e.message, 'url': url}))
-
-    @api.depends('introspection')
-    def _get_introspection_html(self):
-        for build in self:
-
-            url = "http://%s/instance_introspection.json" % (build.domain + '.')
-            try:
-                introspection_dict = {'status': 'fail', 'error': 'Not computed yet'}
-                if build.dest and build.domain.find('False') < 0:
-                    introspection_dict = json.loads(requests.get(url))
-            except Exception as e:
-                introspection_dict = { 'status': 'fail', 'error': e.message, 'url': url}
-            introspection_html = ''
-            if isinstance(introspection_dict, dict):
-                for key in introspection_dict:
-                    introspection_html += '<br/><span class="json-key">%s</span>: <span class="json-value">%s</span>,<br/>' % (key, introspection_dict[key])
-            if isinstance(introspection_dict, list):
-                for el in introspection_dict:
-                    introspection_html += "}<br/>{"
-                    for key in el:
-                        introspection_html += '<br/><span class="json-key">%s</span>: <span class="json-value">%s</span>,<br/>' % (key, el[key])
-
-            build.introspection_html = introspection_html
+                value = requests.get(url)
+                build.introspection = value.text
+            except:
+               pass
 
     dockerfile_path = fields.Char(
         help='Dockerfile path created by travis2docker')
@@ -99,7 +74,6 @@ class RunbotBuild(models.Model):
     branch_short_name = fields.Char(help='Branch short name e.g. pull/1, 8.0')
     introspection = fields.Text(help='Introspection', store=True,
                                  compute='_get_introspection')
-    introspection_html = fields.Html(help='Introspection', compute='_get_introspection_html')
 
     def get_docker_image(self, branch_closest=None):
         self.ensure_one()
