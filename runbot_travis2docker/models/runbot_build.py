@@ -59,7 +59,7 @@ class RunbotBuild(models.Model):
                 value = requests.get(url)
                 build.introspection = value.text
             except:
-               pass
+                build.introspection = ''
 
     dockerfile_path = fields.Char(
         help='Dockerfile path created by travis2docker')
