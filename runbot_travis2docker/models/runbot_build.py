@@ -5,7 +5,6 @@
 
 import logging
 import os
-import json
 import requests
 import subprocess
 import sys
@@ -73,7 +72,7 @@ class RunbotBuild(models.Model):
     is_pull_request = fields.Boolean(help="True is a pull request.")
     branch_short_name = fields.Char(help='Branch short name e.g. pull/1, 8.0')
     introspection = fields.Text(help='Introspection', store=True,
-                                 compute='_get_introspection')
+                                compute='_get_introspection')
 
     def get_docker_image(self, branch_closest=None):
         self.ensure_one()
