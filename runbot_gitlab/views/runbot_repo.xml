@@ -9,7 +9,7 @@
         <field name="token" position="attributes">
             <attribute name="attrs">{'required': [('uses_gitlab', '=', True)]}</attribute>
         </field>
-        <xpath expr="//group[@string='Params']" position="after">
+        <xpath expr="//group" position="after">
           <group string="Gitlab">
             <field name="uses_gitlab"/>
             <field attrs="{'invisible': [('uses_gitlab','=',False)]}" name="active_branches"/>

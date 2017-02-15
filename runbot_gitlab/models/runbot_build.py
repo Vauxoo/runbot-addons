@@ -50,7 +50,7 @@ class runbot_build(models.Model):
             'state': state,
             'ref': self.branch_id.branch_name,
             'name': 'runbot',
-            'target_url': '//%s/runbot/build/%s' % (
+            'target_url': '%s/runbot/build/%s' % (
                 self.repo_id.domain(),
                 self.id,
             ),
