@@ -195,13 +195,14 @@ class RunbotBranch(models.Model):
 
     @api.multi
     def _get_branch_url(self):
+        _branch_urls = super(RunbotBranch, self)._get_branch_url(None, None)
         for branch in self:
-            if re.match('^[0-9]+$', branch.branch_name):
-                pull_type = ("pull" if not branch.repo_id.uses_gitlab
-                             else "merge_requests")
-                branch.branch_url = "https://%s/%s/%s" % (branch.repo_id.base,
-                                                          pull_type,
-                                                          branch.branch_name)
+            if not branch.repo_id.uses_gitlab:
+                branch.branch_url = _branch_urls[branch.id]
             else:
-                branch.branch_url = ("https://%s/tree/%s" %
-                                     (branch.repo_id.base, branch.branch_name))
+                if re.match('^[0-9]+$', branch.branch_name):
+                    branch.branch_url = "https://%s/merge_requests/%s" % (
+                        branch.repo_id.base, branch.branch_name)
+                else:
+                    branch.branch_url = ("https://%s/tree/%s" % (
+                        branch.repo_id.base, branch.branch_name))
