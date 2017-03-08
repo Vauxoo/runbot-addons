@@ -135,6 +135,7 @@ class RunbotBuild(models.Model):
             if not build.repo_id.uses_gitlab:
                 super(RunbotBuild, self).github_status(cr, uid, ids,
                                                        context=context)
+                continue
             if not build.repo_id.token:
                 continue
             session = _get_session(build.repo_id.token)
@@ -200,7 +201,7 @@ class RunbotBranch(models.Model):
             if not branch.repo_id.uses_gitlab:
                 branch.branch_url = _branch_urls[branch.id]
             else:
-                if re.match('^[0-9]+$', branch.branch_name):
+                if branch.branch_name.isdigit():
                     branch.branch_url = "https://%s/merge_requests/%s" % (
                         branch.repo_id.base, branch.branch_name)
                 else:
