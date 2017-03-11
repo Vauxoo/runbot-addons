@@ -76,6 +76,9 @@ class RunbotBuild(models.Model):
     branch_short_name = fields.Char(help='Branch short name e.g. pull/1, 8.0')
     introspection = fields.Text(help='Introspection', store=True,
                                 compute='_get_introspection')
+    docker_executed_commands = fields.Boolean(
+        help='True: Executed "docker exec CONTAINER_BUILD custom_commands"',
+        readonly=True)
 
     def get_docker_image(self, branch_closest=None):
         self.ensure_one()
@@ -355,3 +358,14 @@ class RunbotBuild(models.Model):
             if build.docker_container:
                 build.docker_rm_container()
                 build.docker_rm_image()
+
+    def schedule(self, cr, uid, ids, context=None):
+        res = super(RunbotBuild, self).schedule(cr, uid, ids, context=context)
+        for build in self.browse(cr, uid, ids, context=context):
+            if all(build.state == 'running', build.job == 'job_30_run',
+                   build.docker_executed_commands):
+                run(["docker", "exec", "--user=root",
+                     build.docker_container, "/etc/init.d/ssh start"])
+                # TODO: Add github key to authorized keys
+                build.write({'docker_executed_commands': True})
+        return res
