@@ -362,10 +362,22 @@ class RunbotBuild(models.Model):
     def schedule(self, cr, uid, ids, context=None):
         res = super(RunbotBuild, self).schedule(cr, uid, ids, context=context)
         for build in self.browse(cr, uid, ids, context=context):
-            if all(build.state == 'running', build.job == 'job_30_run',
-                   build.docker_executed_commands):
-                run(["docker", "exec", "--user=root",
-                     build.docker_container, "/etc/init.d/ssh start"])
+            if (build.state == 'running' and build.job == 'job_30_run' and
+                    not build.docker_executed_commands):
+                cmd = ["docker", "exec", "--user=root",
+                       build.docker_container, "/etc/init.d/ssh", "start"]
+                _logger.info('Start ssh server : ' + ' '.join(cmd))
+                subprocess.call(cmd)
+                cmd = ["docker", "exec", "--user=odoo", build.docker_container,
+                       "curl", "https://github.com/JesusZapata.keys", "-o",
+                       "/home/odoo/authorized_keys"]
+                _logger.info('Copy keys of github : ' + ' '.join(cmd))
+                subprocess.call(cmd)
+                cmd = ["docker", "exec", "--user=odoo", build.docker_container,
+                       "cat",
+                       "/home/odoo/authorized_keys"]
+                _logger.info('Cat keys of github : ' + ' '.join(cmd))
+                subprocess.call(cmd)
                 # TODO: Add github key to authorized keys
                 build.write({'docker_executed_commands': True})
         return res
