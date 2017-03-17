@@ -78,7 +78,7 @@ class TestRunbotJobs(TransactionCase):
         _logger = logging.getLogger(__name__ + '.def test_20_jobs_pr')
         self.run_jobs('refs/pull/1')
 
-    def test_00_ssh_server(self):
+    def test_30_ssh_server(self):
         self.repo.update()
         self.repo.killall()
         branch = self.branch_obj.search(self.repo_domain + [
