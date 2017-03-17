@@ -371,6 +371,7 @@ class RunbotBuild(models.Model):
                     session.headers.update({'PRIVATE-TOKEN':
                                             build.repo_id.token})
                 try:
+                    executed = True
                     match_object = re.search('([^/]+)/([^/]+)/([^/.]+(.git)?)',
                                              build.repo_id.base)
                     url = 'https://api.github.com/repos/%s/%s/commits/%s' % (
@@ -379,26 +380,32 @@ class RunbotBuild(models.Model):
                     response = session.get(url)
                     response.raise_for_status()
                     json = response.json()
-                    url = 'https://github.com/%s.keys' % json['author']['login']
-                    response = session.get(url)
-                    response.raise_for_status()
-                    keys = response.content
-                except Exception:
-                    _logger.exception('Get commit info error %s', url)
-                cmd = ["docker", "exec", "--user=root",
-                       build.docker_container, "/etc/init.d/ssh", "start"]
-                _logger.info('Start ssh server : ' + ' '.join(cmd))
-                subprocess.call(cmd)
-                cmd = ["docker", "exec", "--user=odoo", build.docker_container,
-                       "curl", "https://github.com/%s.keys" %
-                       json['author']['login'], "-o",
-                       "/home/odoo/authorized_keys"]
-                _logger.info('Copy keys of github : ' + ' '.join(cmd))
-                subprocess.call(cmd)
-                cmd = ["docker", "exec", "--user=odoo", build.docker_container,
-                       "cat",
-                       "/home/odoo/authorized_keys"]
-                _logger.info('Cat keys of github : ' + ' '.join(cmd))
-                subprocess.call(cmd)
-                build.write({'docker_executed_commands': True})
+                    cmd = ["docker", "exec", "--user=root",
+                           build.docker_container, "/etc/init.d/ssh", "start"]
+                    _logger.info('Start ssh server : ' + ' '.join(cmd))
+                    output = subprocess.check_output(cmd)
+                    if 'done.' not in output:
+                        _logger.exception('Fail to start ssh server: %s',
+                                          output)
+                    else:
+                        _logger.info(output)
+                    cmd = ["docker", "exec", "--user=odoo",
+                           build.docker_container, "curl",
+                           "https://github.com/%s.keys" %
+                           json['author']['login'], "-o",
+                           "/home/odoo/.ssh/authorized_keys"]
+                    _logger.info('Copy keys of github : ' + ' '.join(cmd))
+                    subprocess.call(cmd)
+                    cmd = ["docker", "exec", "--user=odoo",
+                           build.docker_container, "cat",
+                           "/home/odoo/.ssh/authorized_keys"]
+                    output = subprocess.check_output(cmd)
+                    if 'ssh-rsa' not in output:
+                        executed = False
+                        _logger.exception('Fail to copy ssh key: %s', output)
+                    else:
+                        _logger.info(output)
+                    build.write({'docker_executed_commands': executed})
+                except Exception as e:
+                    _logger.exception(e)
         return res

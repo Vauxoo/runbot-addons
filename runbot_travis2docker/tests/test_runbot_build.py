@@ -78,6 +78,38 @@ class TestRunbotJobs(TransactionCase):
         _logger = logging.getLogger(__name__ + '.def test_20_jobs_pr')
         self.run_jobs('refs/pull/1')
 
+    def test_00_ssh_server(self):
+        self.repo.update()
+        self.repo.killall()
+        branch = self.branch_obj.search(self.repo_domain + [
+            ('name', '=', 'refs/pull/1')], limit=1)
+        self.build_obj.search([('branch_id', '=', branch.id)]).unlink()
+        self.build_obj.create({'branch_id': branch.id, 'name': 'HEAD'})
+        self.build = self.build_obj.search([('branch_id', '=', branch.id)],
+                                           limit=1)
+        if self.build.state == 'done' and self.build.result == 'skipped':
+            # When the last commit of the repo is too old,
+            # runbot will skip this build then we are forcing it
+            self.build.force()
+        self.build.checkout()
+        self.delete_build_path(self.build)
+        self.repo.cron()
+        new_current_job = self.wait_change_job(self.build.job, self.build)
+        self.wait_change_job(new_current_job, self.build)
+        self.repo.cron()
+        cmd = ["docker", "exec", self.build.docker_container,
+               "/etc/init.d/ssh", "status"]
+        output = subprocess.check_output(cmd)
+        self.assertIn('sshd is running', output, "SSH should be running")
+        cmd = ["docker", "exec", self.build.docker_container, "cat",
+               "/home/odoo/.ssh/authorized_keys"]
+        output = subprocess.check_output(cmd)
+        self.assertIn('ssh-rsa', output,
+                      "File /home/odoo/.ssh/authorized_keys should be exist")
+        self.assertTrue(self.build.docker_executed_commands,
+                        "docker_executed_commands should be True")
+        self.build.kill()
+
     def run_jobs(self, branch):
         self.assertTrue(
             self.exists_container('registry', include_stop=False),
