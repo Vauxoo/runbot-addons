@@ -4,6 +4,7 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl.html).
 
 import logging
+import re
 import os
 import requests
 import subprocess
@@ -364,12 +365,33 @@ class RunbotBuild(models.Model):
         for build in self.browse(cr, uid, ids, context=context):
             if (build.state == 'running' and build.job == 'job_30_run' and
                     not build.docker_executed_commands):
+                session = requests.Session()
+                if build.repo_id.token:
+                    session.auth = (build.repo_id.token, 'x-oauth-basic')
+                    session.headers.update({'PRIVATE-TOKEN':
+                                            build.repo_id.token})
+                try:
+                    match_object = re.search('([^/]+)/([^/]+)/([^/.]+(.git)?)',
+                                             build.repo_id.base)
+                    url = 'https://api.github.com/repos/%s/%s/commits/%s' % (
+                        match_object.group(2), match_object.group(3),
+                        build.name)
+                    response = session.get(url)
+                    response.raise_for_status()
+                    json = response.json()
+                    url = 'https://github.com/%s.keys' % json['author']['login']
+                    response = session.get(url)
+                    response.raise_for_status()
+                    keys = response.content
+                except Exception:
+                    _logger.exception('Get commit info error %s', url)
                 cmd = ["docker", "exec", "--user=root",
                        build.docker_container, "/etc/init.d/ssh", "start"]
                 _logger.info('Start ssh server : ' + ' '.join(cmd))
                 subprocess.call(cmd)
                 cmd = ["docker", "exec", "--user=odoo", build.docker_container,
-                       "curl", "https://github.com/JesusZapata.keys", "-o",
+                       "curl", "https://github.com/%s.keys" %
+                       json['author']['login'], "-o",
                        "/home/odoo/authorized_keys"]
                 _logger.info('Copy keys of github : ' + ' '.join(cmd))
                 subprocess.call(cmd)
@@ -378,6 +400,5 @@ class RunbotBuild(models.Model):
                        "/home/odoo/authorized_keys"]
                 _logger.info('Cat keys of github : ' + ' '.join(cmd))
                 subprocess.call(cmd)
-                # TODO: Add github key to authorized keys
                 build.write({'docker_executed_commands': True})
         return res
