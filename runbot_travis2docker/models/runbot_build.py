@@ -369,7 +369,7 @@ class RunbotBuild(models.Model):
             try:
                 url = "https://github.com/%(login)s.keys" % response[own_key]
                 stream = requests.get(url, stream=True)
-                keys += '\n' + stream.txt
+                keys += '\n' + stream.text
             except (TypeError, KeyError, requests.RequestException):
                 _logger.debug("Error fetching %s", own_key)
         return keys
