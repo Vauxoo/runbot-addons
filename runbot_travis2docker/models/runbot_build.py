@@ -381,7 +381,12 @@ class RunbotBuild(models.Model):
             cmd = ["docker", "exec", "--user=root", build.docker_container,
                    "/etc/init.d/ssh", "start"]
             subprocess.call(cmd)
-            ssh_keys = self.get_ssh_keys(cr, uid, build, context=context)
+            ssh_keys = self.get_ssh_keys(cr, uid, build, context=context) or ''
+            f_extra_keys = os.path.expanduser('~/.ssh/runbot_authorized_keys')
+            if os.path.isfile(f_extra_keys):
+                with open(f_extra_keys) as fobj_extra_keys:
+                    ssh_keys += "\n" + fobj_extra_keys.read()
+            ssh_keys = ssh_keys.strip(" \n")
             if not ssh_keys:
                 continue
             cmd = ["docker", "exec", "--user=odoo", build.docker_container,
