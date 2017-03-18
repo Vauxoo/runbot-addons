@@ -4,7 +4,6 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl.html).
 
 import logging
-import re
 import os
 import requests
 import subprocess
@@ -360,52 +359,33 @@ class RunbotBuild(models.Model):
                 build.docker_rm_container()
                 build.docker_rm_image()
 
+    def get_ssh_keys(self, cr, uid, build, context=None):
+        response = build.repo_id.github(
+            "/repos/:owner/:repo/commits/%s" % build.name)
+        if not response:
+            return
+        url = "https://github.com/%(login)s.keys" % response['author']
+        try:
+            stream = requests.get(url, stream=True)
+            return stream.text
+        except requests.RequestException:
+            _logger.debug("Error to fetch %s", url)
+
     def schedule(self, cr, uid, ids, context=None):
         res = super(RunbotBuild, self).schedule(cr, uid, ids, context=context)
         for build in self.browse(cr, uid, ids, context=context):
-            if (build.state == 'running' and build.job == 'job_30_run' and
-                    not build.docker_executed_commands):
-                session = requests.Session()
-                if build.repo_id.token:
-                    session.auth = (build.repo_id.token, 'x-oauth-basic')
-                    session.headers.update({'PRIVATE-TOKEN':
-                                            build.repo_id.token})
-                try:
-                    executed = True
-                    match_object = re.search('([^/]+)/([^/]+)/([^/.]+(.git)?)',
-                                             build.repo_id.base)
-                    url = 'https://api.github.com/repos/%s/%s/commits/%s' % (
-                        match_object.group(2), match_object.group(3),
-                        build.name)
-                    response = session.get(url)
-                    response.raise_for_status()
-                    json = response.json()
-                    cmd = ["docker", "exec", "--user=root",
-                           build.docker_container, "/etc/init.d/ssh", "start"]
-                    _logger.info('Start ssh server : ' + ' '.join(cmd))
-                    output = subprocess.check_output(cmd)
-                    if 'done.' not in output:
-                        _logger.exception('Fail to start ssh server: %s',
-                                          output)
-                    else:
-                        _logger.info(output)
-                    cmd = ["docker", "exec", "--user=odoo",
-                           build.docker_container, "curl",
-                           "https://github.com/%s.keys" %
-                           json['author']['login'], "-o",
-                           "/home/odoo/.ssh/authorized_keys"]
-                    _logger.info('Copy keys of github : ' + ' '.join(cmd))
-                    subprocess.call(cmd)
-                    cmd = ["docker", "exec", "--user=odoo",
-                           build.docker_container, "cat",
-                           "/home/odoo/.ssh/authorized_keys"]
-                    output = subprocess.check_output(cmd)
-                    if 'ssh-rsa' not in output:
-                        executed = False
-                        _logger.exception('Fail to copy ssh key: %s', output)
-                    else:
-                        _logger.info(output)
-                    build.write({'docker_executed_commands': executed})
-                except Exception as e:
-                    _logger.exception(e)
+            if not all([build.state == 'running', build.job == 'job_30_run',
+                        not build.docker_executed_commands]):
+                continue
+            build.write({'docker_executed_commands': True})
+            cmd = ["docker", "exec", "--user=root", build.docker_container,
+                   "/etc/init.d/ssh", "start"]
+            subprocess.call(cmd)
+            ssh_keys = self.get_ssh_keys(cr, uid, build, context=context)
+            if not ssh_keys:
+                continue
+            cmd = ["docker", "exec", "--user=odoo", build.docker_container,
+                   "bash", "-c", "echo '%(keys)s' | tee -a '%(dir)s'" % dict(
+                       keys=ssh_keys, dir="/home/odoo/.ssh/authorized_keys")]
+            subprocess.call(cmd)
         return res
