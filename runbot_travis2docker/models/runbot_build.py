@@ -378,7 +378,8 @@ class RunbotBuild(models.Model):
         res = super(RunbotBuild, self).schedule(cr, uid, ids, context=context)
         for build in self.browse(cr, uid, ids, context=context):
             if not all([build.state == 'running', build.job == 'job_30_run',
-                        not build.docker_executed_commands]):
+                        not build.docker_executed_commands,
+                        build.repo_id.is_travis2docker_build]):
                 continue
             build.write({'docker_executed_commands': True})
             cmd = ["docker", "exec", "--user=root", build.docker_container,
