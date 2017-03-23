@@ -374,11 +374,11 @@ class RunbotBuild(models.Model):
                 _logger.debug("Error fetching %s", own_key)
         return keys
 
-    def docker_exec(self, command, container, user=None):
-        if user is None:
-            user = "root"
-        docker_cmd = [
-            "docker", "exec", "--user", user, container]
+    def _docker_exec(self, command, container, user=None):
+        user_cmd = []
+        if user:
+            user_cmd = ["--user", user]
+        docker_cmd = ["docker", "exec"] + user_cmd + [container]
         run(docker_cmd + command)
 
     def schedule(self, cr, uid, ids, context=None):
@@ -389,8 +389,8 @@ class RunbotBuild(models.Model):
                         build.repo_id.is_travis2docker_build]):
                 continue
             build.write({'docker_executed_commands': True})
-            self.docker_exec(['/etc/init.d/ssh', 'start'],
-                             build.docker_container)
+            self._docker_exec(['/etc/init.d/ssh', 'start'],
+                              build.docker_container, user="root")
             ssh_keys = self.get_ssh_keys(cr, uid, build, context=context) or ''
             f_extra_keys = os.path.expanduser('~/.ssh/runbot_authorized_keys')
             if os.path.isfile(f_extra_keys):
@@ -398,8 +398,8 @@ class RunbotBuild(models.Model):
                     ssh_keys += "\n" + fobj_extra_keys.read()
             ssh_keys = ssh_keys.strip(" \n")
             if ssh_keys:
-                self.docker_exec([
+                self._docker_exec([
                     "bash", "-c", "echo '%(keys)s' | tee -a '%(dir)s'" % dict(
                         keys=ssh_keys, dir="/home/odoo/.ssh/authorized_keys")],
-                    build.docker_container, user="odoo")
+                    build.docker_container)
         return res
