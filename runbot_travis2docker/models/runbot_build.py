@@ -384,7 +384,7 @@ class RunbotBuild(models.Model):
             build.write({'docker_executed_commands': True})
             cmd = ["docker", "exec", "--user=root", build.docker_container,
                    "/etc/init.d/ssh", "start"]
-            subprocess.call(cmd)
+            run(cmd)
             ssh_keys = self.get_ssh_keys(cr, uid, build, context=context) or ''
             f_extra_keys = os.path.expanduser('~/.ssh/runbot_authorized_keys')
             if os.path.isfile(f_extra_keys):
@@ -396,5 +396,5 @@ class RunbotBuild(models.Model):
             cmd = ["docker", "exec", "--user=odoo", build.docker_container,
                    "bash", "-c", "echo '%(keys)s' | tee -a '%(dir)s'" % dict(
                        keys=ssh_keys, dir="/home/odoo/.ssh/authorized_keys")]
-            subprocess.call(cmd)
+            run(cmd)
         return res
