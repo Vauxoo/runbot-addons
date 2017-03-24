@@ -31,5 +31,5 @@ class RunbotCIController(runbot.RunbotController):
                                                               repo_domain,
                                                               limit=1)
                 repo_id = repo[0] if len(repo) else None
-        super(RunbotCIController, self).hook(repo_id=None, **post)
+        super(RunbotCIController, self).hook(repo_id, **post)
         return {}
