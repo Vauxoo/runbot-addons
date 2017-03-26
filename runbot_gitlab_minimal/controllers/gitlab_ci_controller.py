@@ -2,6 +2,7 @@
 # Copyright <2017> <Vauxoo info@vauxoo.com>
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
+import json
 import logging
 
 from openerp import http, SUPERUSER_ID
@@ -14,10 +15,11 @@ _logger = logging.getLogger(__name__)
 class RunbotCIController(runbot.RunbotController):
 
     @http.route(['/runbot/hook_gitlab/<int:repo_id>',
-                 '/runbot/hook_gitlab/org'], type='json', auth="public",
-                website=True)
-    def hook_gitlab(self, repo_id=None, **post):
-        data = request.jsonrequest
+                 '/runbot/hook_gitlab/org', '/runbot/hook/<int:repo_id>',
+                 '/runbot/hook/org'])
+    def hook(self, repo_id=None, **post):
+        data = (request.jsonrequest if hasattr(request, 'jsonrequest') else
+                json.loads(request.httprequest.stream.read()))
         event = data['object_kind'] if data.has_key('object_kind') else None
         repository = data['repository']
         if repo_id is None:
@@ -31,5 +33,4 @@ class RunbotCIController(runbot.RunbotController):
                                                               repo_domain,
                                                               limit=1)
                 repo_id = repo[0] if len(repo) else None
-        super(RunbotCIController, self).hook(repo_id, **post)
-        return {}
+        return super(RunbotCIController, self).hook(repo_id, **post)
