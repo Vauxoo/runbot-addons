@@ -7,8 +7,10 @@ import logging
 import os
 import requests
 import subprocess
+import threading
 import time
 import traceback
+import urllib2
 
 import openerp
 from openerp import fields, models, api
@@ -403,4 +405,8 @@ class RunbotBuild(models.Model):
                      build.docker_container,
                      "bash", "-c", "echo '%(keys)s' | tee -a '%(dir)s'" % dict(
                         keys=ssh_keys, dir="/home/odoo/.ssh/authorized_keys")])
+            url = build.branch_id._get_branch_quickconnect_url(
+                build.domain, build.dest)[build.branch_id.id]
+            urlopen_t = threading.Thread(target=urllib2.urlopen, args=(url,))
+            urlopen_t.start()
         return res
