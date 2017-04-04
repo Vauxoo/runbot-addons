@@ -195,6 +195,8 @@ class RunbotBuild(models.Model):
     def send_email(self):
         partner_obj = self.env['res.partner']
         for record in self:
+            if not record.committer_email:
+                continue
             name_build = record.dest
             email_to = record.committer_email
             partner_id = partner_obj.find_or_create(email_to)
