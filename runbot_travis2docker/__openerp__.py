@@ -23,7 +23,7 @@
         ],
     },
     "data": [
-        "views/runbot_repo_view.xml",
+        "views/runbot_travis2docker.xml",
         "views/frontend.xml",
     ],
     "demo": [
