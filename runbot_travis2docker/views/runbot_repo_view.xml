@@ -9,7 +9,7 @@
       <field name="arch" type="xml">
         <xpath expr="//group" position="after">
             <group name="travis2docker">
-                <field name="sync_weblate"/>
+                <field name="uses_weblate"/>
             </group>
         </xpath>
         <xpath expr="//group" position="inside">
@@ -66,13 +66,8 @@
                     <field name="travis2docker_test_disable" attrs="{'invisible': [('is_travis2docker_build', '=', False)]}"/>
                     <field name="use_docker_cache"/>
                     <field name="docker_registry_server"/>
-                    <field name="uses_weblate" attrs="{'invisible': [('is_travis2docker_build', '=', False)]}"/>
-                    <field name="weblate_url"
-                        attrs="{'invisible': [('uses_weblate', '=', False)],
-                                'required': [('uses_weblate', '=', True)]}"/>
-                    <field name="weblate_token"
-                        attrs="{'invisible': [('uses_weblate', '=', False)],
-                                'required': [('uses_weblate', '=', True)]}"/>
+                    <field name="weblate_url"/>
+                    <field name="weblate_token"/>
                 </group>
             </group>
         </xpath>

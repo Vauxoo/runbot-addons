@@ -69,7 +69,7 @@ class RunbotBuild(models.Model):
         help='Dockerfile path created by travis2docker')
     docker_image = fields.Char(help='New image name to create')
     docker_container = fields.Char(help='New container name to create')
-    sync_weblate = fields.Boolean(help='Synchronize with weblate', copy=False)
+    uses_weblate = fields.Boolean(help='Synchronize with weblate', copy=False)
     docker_image_cache = fields.Char(help='Image name to re-use with cache')
     docker_cache = fields.Boolean(
         help="Use of docker image cache. True: If is a PR and "
@@ -170,7 +170,7 @@ class RunbotBuild(models.Model):
         ] if not build.is_pull_request and build.repo_id.use_docker_cache \
             else []
         wl_cmd_env = []
-        if build.sync_weblate and 'refs/pull' not in build.branch_id.name:
+        if build.sync_weblate and not build.is_pull_request:
             wl_cmd_env = [
                 '-e', 'WEBLATE=1',
                 '-e', ('WEBLATE_TOKEN=%s' %
