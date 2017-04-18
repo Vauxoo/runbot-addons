@@ -170,7 +170,7 @@ class RunbotBuild(models.Model):
         ] if not build.is_pull_request and build.repo_id.use_docker_cache \
             else []
         wl_cmd_env = []
-        if build.sync_weblate and not build.is_pull_request:
+        if build.uses_weblate and not build.is_pull_request:
             wl_cmd_env = [
                 '-e', 'WEBLATE=1',
                 '-e', ('WEBLATE_TOKEN=%s' %
