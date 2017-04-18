@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+    <data>
+        <template id="runbot_log_assets_frontend" inherit_id="runbot.assets_frontend" name="runbot_log.assets.frontend">
+            <xpath expr="." position="inside">
+                <script type="text/javascript" src="/runbot_log/static/src/js/runbot_log.js"/>
+            </xpath>
+        </template>
+    </data>
+</openerp>
