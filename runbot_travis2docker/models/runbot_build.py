@@ -171,7 +171,7 @@ class RunbotBuild(models.Model):
             else []
         wl_cmd_env = []
         if build.uses_weblate and not build.is_pull_request:
-            wl_cmd_env = [
+            wl_cmd_env += [
                 '-e', 'WEBLATE=1',
                 '-e', ('WEBLATE_TOKEN=%s' %
                        build.branch_id.repo_id.weblate_token),
@@ -179,8 +179,8 @@ class RunbotBuild(models.Model):
                        build.branch_id.repo_id.weblate_url)
             ]
             if build.branch_id.repo_id.token:
-                wl_cmd_env = wl_cmd_env + ['-e', 'GITHUB_TOKEN=%s' %
-                                           build.branch_id.repo_id.token]
+                wl_cmd_env += ['-e', 'GITHUB_TOKEN=%s' %
+                               build.branch_id.repo_id.token]
         cmd = [
             'docker', 'run',
             '-e', 'INSTANCE_ALIVE=1',
