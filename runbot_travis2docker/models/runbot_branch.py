@@ -62,7 +62,7 @@ class RunbotBranch(models.Model):
                 branch.write({'updated_weblate':
                               new_date.strftime('%Y-%m-%d %H:%M:%S')})
                 self.env['runbot.build'].create({'branch_id': branch.id,
-                                                 'name': 'HEAD',
+                                                 'name': branch.branch_name,
                                                  'uses_weblate': True})
 
     def _get_branch_quickconnect_url(self, cr, uid, ids, fqdn, dest,
