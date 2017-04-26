@@ -129,7 +129,7 @@ class RunbotBuild(models.Model):
     @api.multi
     def _ssh_link(self):
         for record in self:
-            html = "ssh -p {} root@{}"
+            html = "ssh -p {} odoo@{}"
             link = _(html).format(record.port+1, record.host_name)
             record.ssh_link = link
 
