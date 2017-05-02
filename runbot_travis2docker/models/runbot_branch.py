@@ -37,13 +37,21 @@ class RunbotBranch(models.Model):
             })
             projects = session.get(url + '/projects/').json()
             for project in projects['results']:
-                url_info = urlparse(project['web'])
-                if not url_info.path[1:] in branch.repo_id.name:
-                    continue
                 components = session.get('%s/projects/%s/components'
                                          % (url, project['slug'])).json()
                 for component in components['results']:
-                    if component['branch'] != branch.branch_name:
+                    slug = branch.repo_id.name
+                    repo = branch.repo_id.name
+                    if '@' in repo:
+                        slug = repo.split('@')[1:].pop().replace('/', '-')
+                    if (any([pre for pre in ['http://', 'https://']
+                             if pre in repo])):
+                        slug = repo.replace(
+                            'https://', '').replace('http://', '').split('/')
+                        slug = slug[0] + ':' +  slug[1] + '-' + slug[2]
+                    slug = (slug.replace('.git', '') +
+                            '(' + component['branch'] + ')')
+                    if project['name'] != slug:
                         continue
                     changes = session.get('%s/components/%s/%s/changes/'
                                           % (url, project['slug'],
