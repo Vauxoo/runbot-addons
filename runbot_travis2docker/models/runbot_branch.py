@@ -3,10 +3,9 @@
 #   Coded by: moylop260@vauxoo.com
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl.html).
 
-from datetime import datetime
+import re
 import requests
-
-from urlparse import urlparse
+from datetime import datetime
 
 from openerp import fields, models, api
 
@@ -16,6 +15,28 @@ class RunbotBranch(models.Model):
 
     uses_weblate = fields.Boolean(help='Synchronize with Weblate')
     updated_weblate = fields.Datetime(help='Last update of weblate')
+    name_weblate = fields.Char(compute='_compute_name_weblate', store=True)
+
+    @api.multi
+    @api.depends('repo_id.name', 'branch_name', 'uses_weblate')
+    def _compute_name_weblate(self):
+        for branch in self:
+            name = branch.repo_id.name.replace(':', '/')
+            name = re.sub('.+@', '', name)
+            name = re.sub('.git$', '', name)
+            match_object = re.search(
+                r'(?P<host>[^/]+)/(?P<owner>[^/]+)/(?P<repo>[^/]+)', name)
+            if match_object:
+                host = match_object.group("host").replace(
+                    'https://', '').replace('http://', '')
+                owner = match_object.group("owner")
+                repo = match_object.group("repo")
+                name = '%(host)s:%(owner)s/%(repo)s' % {
+                    'host': host,
+                    'owner': owner,
+                    'repo': repo
+                }
+            branch.name_weblate = name + '(' + branch.branch_name + ')'
 
     @api.model
     def cron_weblate(self):
@@ -40,38 +61,32 @@ class RunbotBranch(models.Model):
                 components = session.get('%s/projects/%s/components'
                                          % (url, project['slug'])).json()
                 for component in components['results']:
-                    slug = branch.repo_id.name
-                    repo = branch.repo_id.name
-                    if '@' in repo:
-                        slug = repo.split('@')[1:].pop().replace('/', '-')
-                    if (any([pre for pre in ['http://', 'https://']
-                             if pre in repo])):
-                        slug = repo.replace(
-                            'https://', '').replace('http://', '').split('/')
-                        slug = slug[0] + ':' +  slug[1] + '-' + slug[2]
-                    slug = (slug.replace('.git', '') +
-                            '(' + component['branch'] + ')')
-                    if project['name'] != slug:
+                    if component['branch'] != branch['branch_name']:
+                        continue
+                    if project['name'] != branch.name_weblate:
                         continue
                     changes = session.get('%s/components/%s/%s/changes/'
                                           % (url, project['slug'],
                                              component['slug'])).json()
                     if not changes['results']:
                         continue
-                    change = changes['results'].pop()
+                    change = iter(changes['results']).next()
                     date = datetime.strptime(
                         change['timestamp'], '%Y-%m-%dT%H:%M:%S.%fZ')
                     new_date = (date
                                 if (not new_date or date > new_date)
                                 else new_date)
-            if ((current_date and new_date and
-                 current_date < new_date.replace(microsecond=0)) or
-                    (not current_date and new_date)):
-                branch.write({'updated_weblate':
-                              new_date.strftime('%Y-%m-%d %H:%M:%S')})
-                self.env['runbot.build'].create({'branch_id': branch.id,
-                                                 'name': branch.branch_name,
-                                                 'uses_weblate': True})
+                    if ((current_date and new_date and
+                            current_date < new_date.replace(microsecond=0)) or
+                            (not current_date and new_date)):
+                        branch.write({'updated_weblate':
+                                      new_date.strftime('%Y-%m-%d %H:%M:%S')})
+                        self.env['runbot.build'].create({
+                            'branch_id': branch.id,
+                            'name': branch.branch_name,
+                            'uses_weblate': True})
+                        break
+
 
     def _get_branch_quickconnect_url(self, cr, uid, ids, fqdn, dest,
                                      context=None):
