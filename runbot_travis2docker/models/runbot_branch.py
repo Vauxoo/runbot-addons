@@ -71,6 +71,8 @@ class RunbotBranch(models.Model):
                     if not changes['results']:
                         continue
                     change = iter(changes['results']).next()
+                    if change['action'] != 17:
+                        continue
                     date = datetime.strptime(
                         change['timestamp'], '%Y-%m-%dT%H:%M:%S.%fZ')
                     new_date = (date
