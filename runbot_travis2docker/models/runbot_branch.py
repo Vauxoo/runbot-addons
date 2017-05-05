@@ -24,19 +24,14 @@ class RunbotBranch(models.Model):
             name = branch.repo_id.name.replace(':', '/')
             name = re.sub('.+@', '', name)
             name = re.sub('.git$', '', name)
-            match_object = re.search(
+            name = re.sub('^https://', '', name)
+            name = re.sub('^http://', '', name)
+            match = re.search(
                 r'(?P<host>[^/]+)/(?P<owner>[^/]+)/(?P<repo>[^/]+)', name)
-            if match_object:
-                host = match_object.group("host").replace(
-                    'https://', '').replace('http://', '')
-                owner = match_object.group("owner")
-                repo = match_object.group("repo")
-                name = '%(host)s:%(owner)s/%(repo)s' % {
-                    'host': host,
-                    'owner': owner,
-                    'repo': repo
-                }
-            branch.name_weblate = name + '(' + branch.branch_name + ')'
+            if match:
+                name = ("%(host)s:%(owner)s/%(repo)s (%(branch)s)" %
+                        dict(match.groupdict(), branch=branch['branch_name']))
+            branch.name_weblate = name
 
     @api.model
     def cron_weblate(self):
