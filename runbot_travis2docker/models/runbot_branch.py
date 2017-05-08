@@ -84,7 +84,6 @@ class RunbotBranch(models.Model):
                             'uses_weblate': True})
                         break
 
-
     def _get_branch_quickconnect_url(self, cr, uid, ids, fqdn, dest,
                                      context=None):
         """Remove debug=1 because is too slow
