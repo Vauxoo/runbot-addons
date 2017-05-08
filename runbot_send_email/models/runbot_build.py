@@ -51,6 +51,9 @@ class RunbotBuild(models.Model):
                 + '/' + rec.repo_project
             rec.pr_link = rec.repo_link + rec.branch_id.name.replace(
                 'refs/heads', '/tree').replace('refs', '')
+            if (hasattr(rec.branch_id.repo_id, 'uses_gitlab') and
+                    rec.branch_id.repo_id.uses_gitlab):
+                rec.pr_link = rec.pr_link.replace('/pull/', '/merge_requests/')
             rec.commit_link = rec.repo_link + '/commit/' + rec.name[:8]
 
     @api.multi
@@ -63,7 +66,12 @@ class RunbotBuild(models.Model):
     def _branch_name(self):
         for record in self:
             if 'pull' in record.branch_id.name:
-                branch = _(u"PR #{}").format(record.branch_id.branch_name)
+                branch = _(u"%s #{}" % (
+                    'PR' if not (
+                        hasattr(record.branch_id.repo_id, 'uses_gitlab') and
+                        record.branch_id.repo_id.uses_gitlab) else 'MR')
+                )
+                branch = branch.format(record.branch_id.branch_name)
             else:
                 branch = record.branch_id.branch_name
             record.branch_name = branch
