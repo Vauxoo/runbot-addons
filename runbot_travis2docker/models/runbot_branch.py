@@ -56,7 +56,11 @@ class RunbotBranch(models.Model):
             for project in projects['results']:
                 components = session.get('%s/projects/%s/components'
                                          % (url, project['slug'])).json()
+                updated_branch = None
                 for component in components['results']:
+                    if (updated_branch and
+                            updated_branch == component['branch']):
+                        continue
                     if component['branch'] != branch['branch_name']:
                         continue
                     if project['name'] != branch.name_weblate:
@@ -66,7 +70,7 @@ class RunbotBranch(models.Model):
                                              component['slug'])).json()
                     if not changes['results']:
                         continue
-                    change = iter(changes['results']).next()
+                    change = changes['results'][0]
                     if change['action'] != 17:
                         continue
                     date = datetime.strptime(
@@ -81,9 +85,9 @@ class RunbotBranch(models.Model):
                                       new_date.strftime('%Y-%m-%d %H:%M:%S')})
                         self.env['runbot.build'].create({
                             'branch_id': branch.id,
-                            'name': branch.branch_name,
+                            'name': component['branch'],
                             'uses_weblate': True})
-                        break
+                        updated_branch = component['branch']
 
     def _get_branch_quickconnect_url(self, cr, uid, ids, fqdn, dest,
                                      context=None):
