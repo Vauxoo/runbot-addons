@@ -67,7 +67,12 @@
                     <field name="use_docker_cache"/>
                     <field name="docker_registry_server"/>
                     <field name="weblate_url"/>
-                    <field name="weblate_token"/>
+                    <label for="weblate_token"/>
+                    <div class="o_row">
+                        <field name="weblate_token"/>
+                        <button name="weblate_validation" string="Check"
+                            class="oe_link pull-right oe_edit_only" type="object"/>
+                    </div>
                 </group>
             </group>
         </xpath>

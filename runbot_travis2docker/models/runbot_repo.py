@@ -24,18 +24,19 @@ class RunbotRepo(models.Model):
     weblate_url = fields.Char(default="https://weblate.vauxoo.com/api")
     weblate_token = fields.Char()
 
-    @api.constrains('weblate_url', 'weblate_token')
+    @api.multi
     def weblate_validation(self):
-        if not self.weblate_url or not self.weblate_token:
-            return
-        session = requests.Session()
-        session.headers.update({
-            'Accept': 'application/json',
-            'User-Agent': 'mqt',
-            'Authorization': 'Token %s' % self.weblate_token
-        })
-        response = session.get(self.weblate_url)
-        response.raise_for_status()
-        json = response.json()
-        if 'projects' not in json:
-            raise ValidationError(_('Response json bad formated'))
+        for record in self:
+            if not record.weblate_url or not record.weblate_token:
+                return
+            session = requests.Session()
+            session.headers.update({
+                'Accept': 'application/json',
+                'User-Agent': 'mqt',
+                'Authorization': 'Token %s' % record.weblate_token
+            })
+            response = session.get(record.weblate_url)
+            response.raise_for_status()
+            json = response.json()
+            if 'projects' not in json:
+                raise ValidationError(_('Response json bad formated'))
