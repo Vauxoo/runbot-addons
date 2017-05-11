@@ -52,8 +52,15 @@ class RunbotBranch(models.Model):
                 'User-Agent': 'runbot_travis2docker',
                 'Authorization': 'Token %s' % branch.repo_id.weblate_token
             })
-            projects = session.get(url + '/projects/').json()
-            for project in projects['results']:
+            projects = []
+            page = 1
+            while True:
+                data = session.get('%s/projects/?page=%s' % (url, page)).json()
+                projects.extend(data['results'] or [])
+                if (not data['next']):
+                    break
+                page+=1
+            for project in projects:
                 components = session.get('%s/projects/%s/components'
                                          % (url, project['slug'])).json()
                 updated_branch = None
