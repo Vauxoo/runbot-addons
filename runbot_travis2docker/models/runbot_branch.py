@@ -70,8 +70,12 @@ class RunbotBranch(models.Model):
                                              component['slug'])).json()
                     if not changes['results']:
                         continue
-                    change = changes['results'][0]
-                    if change['action'] != 17:
+                    change = None
+                    for record in changes['results']:
+                        if record['action'] == 17:
+                            change = record
+                            break
+                    if not change:
                         continue
                     date = datetime.strptime(
                         change['timestamp'], '%Y-%m-%dT%H:%M:%S.%fZ')
