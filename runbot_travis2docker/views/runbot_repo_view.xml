@@ -40,6 +40,8 @@
                     groups="runbot.group_runbot_admin"/>
                 <button name="cron" type="object" string="Cron"
                     groups="runbot.group_runbot_admin"/>
+                <button name="cron_weblate" type="object" string="Cron weblate"
+                    groups="runbot.group_runbot_admin"/>
                 <!--
                 <button name="killall" type="object" string="Killall" groups="runbot.group_runbot_admin"/>
                 -->
