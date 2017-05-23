@@ -20,7 +20,7 @@ class RunbotCIController(runbot.RunbotController):
     def hook(self, repo_id=None, **post):
         data = (request.jsonrequest if hasattr(request, 'jsonrequest') else
                 json.loads(request.httprequest.stream.read()))
-        event = data['object_kind'] if data.has_key('object_kind') else None
+        event = data['object_kind'] if 'object_kind' in data else None
         repository = data['repository']
         if repo_id is None:
             if event in ['push', 'merge_request']:
@@ -32,5 +32,5 @@ class RunbotCIController(runbot.RunbotController):
                                                               SUPERUSER_ID,
                                                               repo_domain,
                                                               limit=1)
-                repo_id = repo[0] if len(repo) else None
+                repo_id = repo[0] if repo else None
         return super(RunbotCIController, self).hook(repo_id, **post)
