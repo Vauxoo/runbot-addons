@@ -35,6 +35,9 @@ class RunbotBranch(models.Model):
 
     @api.model
     def cron_weblate(self):
+        projects = []
+        wl_token = ''
+        wl_url = ''
         for branch in self.search([('uses_weblate', '=', True)]):
             if (not branch.repo_id.weblate_token or
                     not branch.repo_id.weblate_url):
@@ -47,16 +50,20 @@ class RunbotBranch(models.Model):
                 'User-Agent': 'runbot_travis2docker',
                 'Authorization': 'Token %s' % branch.repo_id.weblate_token
             })
-            projects = []
-            page = 1
-            while True:
-                response = session.get('%s/projects/?page=%s' % (url, page))
-                response.raise_for_status()
-                data = response.json()
-                projects.extend(data['results'] or [])
-                if not data['next']:
-                    break
-                page += 1
+            if (wl_token != branch.repo_id.weblate_token or
+                    wl_url != branch.repo_id.weblate_url):
+                page = 1
+                while True:
+                    response = session.get('%s/projects/?page=%s' % (url,
+                                                                     page))
+                    response.raise_for_status()
+                    data = response.json()
+                    projects.extend(data['results'] or [])
+                    if not data['next']:
+                        break
+                    page += 1
+                wl_token = branch.repo_id.weblate_token
+                wl_url = branch.repo_id.weblate_url
             for project in projects:
                 response = session.get('%s/projects/%s/components'
                                        % (url, project['slug']))
