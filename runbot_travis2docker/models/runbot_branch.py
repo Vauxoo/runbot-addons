@@ -71,12 +71,10 @@ class RunbotBranch(models.Model):
                 components = response.json()
                 updated_branch = None
                 for component in components['results']:
-                    if (updated_branch and
-                            updated_branch == component['branch']):
-                        continue
-                    if component['branch'] != branch['branch_name']:
-                        continue
-                    if project['name'] != branch.name_weblate:
+                    if ((updated_branch and
+                            updated_branch == component['branch']) or
+                            (component['branch'] != branch['branch_name']) or
+                            (project['name'] != branch.name_weblate)):
                         continue
                     has_build = self.env['runbot.build'].search(
                         [('branch_id', '=', branch.id),
