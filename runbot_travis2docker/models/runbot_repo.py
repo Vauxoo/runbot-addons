@@ -7,6 +7,7 @@ import requests
 
 from openerp import _, fields, models, api
 from openerp.exceptions import ValidationError, Warning
+from openerp.tools.misc import scan_languages
 
 
 class RunbotRepo(models.Model):
@@ -23,6 +24,19 @@ class RunbotRepo(models.Model):
     travis2docker_test_disable = fields.Boolean('Test Disable?')
     weblate_url = fields.Char(default="https://weblate.vauxoo.com/api")
     weblate_token = fields.Char()
+    weblate_languages = fields.Char(help="List of code iso of languages E.g."
+                                    " en_US,es_ES")
+
+    @api.multi
+    @api.constrains('weblate_languages')
+    def _check_weblate_languages(self):
+        supported_langs = [item[0] for item in scan_languages()]
+        for record in self:
+            langs = record.weblate_languages.split(',')
+            for lang in langs:
+                if lang not in supported_langs:
+                    raise ValidationError(_("The language '%s' is not"
+                                            "supported" % lang))
 
     @api.multi
     def weblate_validation(self):
