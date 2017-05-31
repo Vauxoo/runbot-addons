@@ -95,11 +95,19 @@ class RunbotBranch(models.Model):
                                   'remote': remote}, '--stat'])
                     if not diff:
                         continue
-                    self.env['runbot.build'].create({
-                        'branch_id': branch.id,
-                        'name': component['branch'],
-                        'uses_weblate': True})
+                    self._create_build(branch)
                     updated_branch = component['branch']
+
+    @api.multi
+    def force_weblate(self):
+        for record in self:
+            self._create_build(record)
+
+    def _create_build(self, branch):
+        self.env['runbot.build'].create({
+            'branch_id': branch.id,
+            'name': branch.branch_name,
+            'uses_weblate': True})
 
     def _get_branch_quickconnect_url(self, cr, uid, ids, fqdn, dest,
                                      context=None):
