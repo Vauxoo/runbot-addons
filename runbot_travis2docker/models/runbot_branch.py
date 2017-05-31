@@ -4,9 +4,9 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl.html).
 
 import re
-from datetime import datetime
 
 import requests
+import subprocess
 
 from openerp import fields, models, api
 
@@ -15,7 +15,6 @@ class RunbotBranch(models.Model):
     _inherit = "runbot.branch"
 
     uses_weblate = fields.Boolean(help='Synchronize with Weblate')
-    updated_weblate = fields.Datetime(help='Last update of weblate')
     name_weblate = fields.Char(compute='_compute_name_weblate', store=True)
 
     @api.multi
@@ -40,11 +39,7 @@ class RunbotBranch(models.Model):
             if (not branch.repo_id.weblate_token or
                     not branch.repo_id.weblate_url):
                 continue
-            current_date = (datetime.strptime(branch.updated_weblate,
-                                              '%Y-%m-%d %H:%M:%S')
-                            if branch.updated_weblate
-                            else None)
-            new_date = None
+            cmd = ['git', '--git-dir=%s' % branch.repo_id.path]
             url = branch.repo_id.weblate_url
             session = requests.Session()
             session.headers.update({
@@ -76,35 +71,35 @@ class RunbotBranch(models.Model):
                         continue
                     if project['name'] != branch.name_weblate:
                         continue
-                    response = session.get('%s/components/%s/%s/changes/'
-                                           % (url, project['slug'],
-                                              component['slug']))
-                    response.raise_for_status()
-                    changes = response.json()
-                    if not changes['results']:
+                    has_build = self.env['runbot.build'].search(
+                        [('branch_id', '=', branch.id),
+                         ('state', 'in', ('pending', 'running', 'testing')),
+                         ('name', '=', component['branch']),
+                         ('uses_weblate', '=', True)])
+                    if has_build:
                         continue
-                    change = None
-                    for record in changes['results']:
-                        if record['action'] == 17:
-                            change = record
-                            break
-                    if not change:
+                    remote = 'wl-%s' % project['slug']
+                    url_repo = (branch.repo_id.weblate_url.replace('api',
+                                                                   'git') +
+                                '/' + project['slug'] + '/' +
+                                component['slug'])
+                    try:
+                        subprocess.check_output(cmd + ['remote', 'add', remote,
+                                                url_repo, '--fetch'])
+                    except subprocess.CalledProcessError:
+                        pass
+                    diff = subprocess.check_output(
+                        cmd + ['diff',
+                               '%(branch)s..%(remote)s/%(branch)s'
+                               % {'branch': branch['branch_name'],
+                                  'remote': remote}, '--stat'])
+                    if not diff:
                         continue
-                    date = datetime.strptime(
-                        change['timestamp'], '%Y-%m-%dT%H:%M:%S.%fZ')
-                    new_date = (date
-                                if (not new_date or date > new_date)
-                                else new_date)
-                    if ((current_date and new_date and
-                            current_date < new_date.replace(microsecond=0)) or
-                            (not current_date and new_date)):
-                        branch.write({'updated_weblate':
-                                      new_date.strftime('%Y-%m-%d %H:%M:%S')})
-                        self.env['runbot.build'].create({
-                            'branch_id': branch.id,
-                            'name': component['branch'],
-                            'uses_weblate': True})
-                        updated_branch = component['branch']
+                    self.env['runbot.build'].create({
+                        'branch_id': branch.id,
+                        'name': component['branch'],
+                        'uses_weblate': True})
+                    updated_branch = component['branch']
 
     def _get_branch_quickconnect_url(self, cr, uid, ids, fqdn, dest,
                                      context=None):

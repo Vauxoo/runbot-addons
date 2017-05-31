@@ -88,7 +88,6 @@
             <xpath expr="//group" position="after">
                 <group name="travis2docker">
                     <field name="uses_weblate"/>
-                    <field name="updated_weblate"/>
                 </group>
             </xpath>
         </field>
