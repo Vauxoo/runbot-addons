@@ -34,6 +34,7 @@ class RunbotRepo(models.Model):
         for record in self:
             langs = record.weblate_languages.split(',')
             for lang in langs:
+                lang = lang.strip()
                 if lang not in supported_langs:
                     raise ValidationError(_("The language '%s' is not"
                                             "supported" % lang))
