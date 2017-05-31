@@ -85,9 +85,10 @@ class RunbotBranch(models.Model):
                                 component['slug'])
                     try:
                         subprocess.check_output(cmd + ['remote', 'add', remote,
-                                                url_repo, '--fetch'])
+                                                url_repo])
                     except subprocess.CalledProcessError:
                         pass
+                    subprocess.check_output(cmd + ['fetch', remote])
                     diff = subprocess.check_output(
                         cmd + ['diff',
                                '%(branch)s..%(remote)s/%(branch)s'
@@ -103,7 +104,7 @@ class RunbotBranch(models.Model):
         for record in self:
             self._create_build(record)
 
-    def _create_build(self, branch):
+    def _create_wl_build(self, branch):
         self.env['runbot.build'].create({
             'branch_id': branch.id,
             'name': branch.branch_name,
