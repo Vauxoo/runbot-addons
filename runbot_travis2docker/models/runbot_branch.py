@@ -79,10 +79,9 @@ class RunbotBranch(models.Model):
                     if has_build:
                         continue
                     remote = 'wl-%s' % project['slug']
-                    url_repo = (branch.repo_id.weblate_url.replace('api',
-                                                                   'git') +
-                                '/' + project['slug'] + '/' +
-                                component['slug'])
+                    url_repo = '/'.join([
+                        branch.repo_id.weblate_url.replace('api', 'git'),
+                        project['slug'], component['slug']])
                     try:
                         subprocess.check_output(cmd + ['remote', 'add', remote,
                                                 url_repo])
@@ -96,19 +95,16 @@ class RunbotBranch(models.Model):
                                   'remote': remote}, '--stat'])
                     if not diff:
                         continue
-                    self._create_build(branch)
+                    branch.force_weblate()
                     updated_branch = component['branch']
 
     @api.multi
     def force_weblate(self):
         for record in self:
-            self._create_build(record)
-
-    def _create_wl_build(self, branch):
-        self.env['runbot.build'].create({
-            'branch_id': branch.id,
-            'name': branch.branch_name,
-            'uses_weblate': True})
+            self.env['runbot.build'].create({
+                'branch_id': record.id,
+                'name': record.branch_name,
+                'uses_weblate': True})
 
     def _get_branch_quickconnect_url(self, cr, uid, ids, fqdn, dest,
                                      context=None):
