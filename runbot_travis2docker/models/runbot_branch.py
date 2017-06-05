@@ -35,8 +35,9 @@ class RunbotBranch(models.Model):
 
     @tools.ormcache('url', 'token')
     def get_weblate_projects(self, url, token):
-        """Search all weblate API, project and component information.
-        Store into the local variable 'read_group.projects' to use as cache"""
+        """Find all projects and components that are on weblate url.
+        The cache is handled by @tools.ormcache annotation if the url and token
+        were already searched"""
         projects = []
         items = []
         page = 1
@@ -106,6 +107,8 @@ class RunbotBranch(models.Model):
                         continue
                     branch.force_weblate()
                     updated_branch = component['branch']
+        # The cache must be deleted to query the weblate API next time and get
+        # the latest changes
         self.clear_caches()
 
     @api.multi
