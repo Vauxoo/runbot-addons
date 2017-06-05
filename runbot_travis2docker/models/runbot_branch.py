@@ -8,42 +8,7 @@ import re
 import subprocess
 import requests
 
-from openerp import fields, models, api
-
-
-def read_group(branch):
-    """Search all weblate API, project and component information.
-    Store into the local variable 'read_group.projects' to use as cache"""
-    if 'projects' not in read_group.__dict__:
-        read_group.projects = {}
-    url = branch.repo_id.weblate_url
-    key = '%s__%s' % (url, branch.repo_id.weblate_token)
-    page = 1
-    projects = []
-    session = requests.Session()
-    session.headers.update({
-        'Accept': 'application/json',
-        'User-Agent': 'runbot_travis2docker',
-        'Authorization': 'Token %s' % branch.repo_id.weblate_token
-    })
-    if key not in read_group.projects:
-        read_group.projects[key] = []
-        while True:
-            response = session.get('%s/projects/?page=%s' % (url, page))
-            response.raise_for_status()
-            data = response.json()
-            projects.extend(data['results'])
-            if not data['next']:
-                break
-            page += 1
-        for project in projects:
-            response = session.get('%s/projects/%s/components'
-                                   % (url, project['slug']))
-            response.raise_for_status()
-            data = response.json()
-            project['components'] = data['results']
-            read_group.projects[key].append(project)
-    return read_group.projects[key]
+from openerp import fields, models, api, tools
 
 
 class RunbotBranch(models.Model):
@@ -68,6 +33,36 @@ class RunbotBranch(models.Model):
                         dict(match.groupdict(), branch=branch['branch_name']))
             branch.name_weblate = name
 
+    @tools.ormcache('url', 'token')
+    def get_weblate_projects(self, url, token):
+        """Search all weblate API, project and component information.
+        Store into the local variable 'read_group.projects' to use as cache"""
+        projects = []
+        items = []
+        page = 1
+        session = requests.Session()
+        session.headers.update({
+            'Accept': 'application/json',
+            'User-Agent': 'runbot_travis2docker',
+            'Authorization': 'Token %s' % token
+        })
+        while True:
+            response = session.get('%s/projects/?page=%s' % (url, page))
+            response.raise_for_status()
+            data = response.json()
+            items.extend(data['results'])
+            if not data['next']:
+                break
+            page += 1
+        for project in items:
+            response = session.get('%s/projects/%s/components'
+                                   % (url, project['slug']))
+            response.raise_for_status()
+            data = response.json()
+            project['components'] = data['results']
+            projects.append(project)
+        return projects
+
     @api.model
     def cron_weblate(self):
         for branch in self.search([('uses_weblate', '=', True)]):
@@ -75,7 +70,8 @@ class RunbotBranch(models.Model):
                     not branch.repo_id.weblate_url):
                 continue
             cmd = ['git', '--git-dir=%s' % branch.repo_id.path]
-            projects = read_group(branch)
+            projects = self.get_weblate_projects(branch.repo_id.weblate_url,
+                                                 branch.repo_id.weblate_token)
             for project in projects:
                 updated_branch = None
                 for component in project['components']:
@@ -110,6 +106,7 @@ class RunbotBranch(models.Model):
                         continue
                     branch.force_weblate()
                     updated_branch = component['branch']
+        self.clear_caches()
 
     @api.multi
     def force_weblate(self):
