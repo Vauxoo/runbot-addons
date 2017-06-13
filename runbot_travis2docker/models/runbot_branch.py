@@ -99,8 +99,8 @@ class RunbotBranch(models.Model):
                         pass
                     subprocess.check_output(cmd + ['fetch', remote])
                     diff = subprocess.check_output(
-                        cmd + ['diff',
-                               'heads/%(branch)s..remotes/%(remote)s/%(branch)s'
+                        cmd + ['diff', 'heads/%(branch)s..'
+                               'remotes/%(remote)s/%(branch)s'
                                % {'branch': branch['branch_name'],
                                   'remote': remote}, '--stat'])
                     if not diff:
