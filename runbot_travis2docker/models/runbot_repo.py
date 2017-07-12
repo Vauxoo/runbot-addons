@@ -26,6 +26,8 @@ class RunbotRepo(models.Model):
     weblate_token = fields.Char()
     weblate_languages = fields.Char(help="List of code iso of languages E.g."
                                     " en_US,es_ES")
+    docker_image_name = fields.Char("Docker image",
+                                    default="vauxoo/odoo-80-image-shippable-auto")
 
     @api.multi
     @api.constrains('weblate_languages')

@@ -335,6 +335,7 @@ class RunbotBuild(models.Model):
                                            str(build.id) + "_" + sha[:7]),
                     os_kwargs=git_data,
                     copy_paths=[("~/.ssh", "$HOME/.ssh")],
+                    image=build.repo_id.docker_image_name
                 )
                 path_scripts = t2d_obj.compute_dockerfile(
                     skip_after_success=True)
