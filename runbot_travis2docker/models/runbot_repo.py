@@ -24,7 +24,7 @@ class RunbotRepo(models.Model):
     travis2docker_test_disable = fields.Boolean('Test Disable?')
     weblate_url = fields.Char(default="https://weblate.vauxoo.com/api")
     weblate_ssh = fields.Char(
-        default="ssh://weblate@weblate.vauxoo.com/app/data/vcs")
+        default="ssh://user@webpage.com")
     weblate_token = fields.Char()
     weblate_languages = fields.Char(help="List of code iso of languages E.g."
                                     " en_US,es_ES")
