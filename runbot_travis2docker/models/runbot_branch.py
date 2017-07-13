@@ -68,7 +68,8 @@ class RunbotBranch(models.Model):
     def cron_weblate(self):
         for branch in self.search([('uses_weblate', '=', True)]):
             if (not branch.repo_id.weblate_token or
-                    not branch.repo_id.weblate_url):
+                    not branch.repo_id.weblate_url or
+                    not branch.repo_id.weblate_ssh):
                 continue
             cmd = ['git', '--git-dir=%s' % branch.repo_id.path]
             projects = self.get_weblate_projects(branch.repo_id.weblate_url,
@@ -90,8 +91,8 @@ class RunbotBranch(models.Model):
                         continue
                     remote = 'wl-%s' % project['slug']
                     url_repo = '/'.join([
-                        branch.repo_id.weblate_url.replace('api', 'git'),
-                        project['slug'], component['slug']])
+                        branch.repo_id.weblate_ssh, project['slug'],
+                        component['slug']])
                     try:
                         subprocess.check_output(cmd + ['remote', 'add', remote,
                                                 url_repo])
