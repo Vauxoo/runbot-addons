@@ -89,7 +89,12 @@ class RunbotBranch(models.Model):
                          ('uses_weblate', '=', True)])
                     if has_build:
                         continue
-                    remote = 'wl-%s' % project['slug']
+                    component = [item for item in project['components']
+                                 if item['git_export']]
+                    if len(component) > 1:
+                        continue
+                    component = component[0]
+                    remote = 'wl-%s-%s' % (project['slug'], component['slug'])
                     url_repo = '/'.join([
                         branch.repo_id.weblate_ssh, project['slug'],
                         component['slug']])
