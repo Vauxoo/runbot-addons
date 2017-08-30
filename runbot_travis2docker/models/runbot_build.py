@@ -427,9 +427,11 @@ class RunbotBuild(models.Model):
         current_host = fqdn()
         for build in self.browse(cr, uid, ids, context=context):
             if not all([build.state == 'running', build.job == 'job_30_run',
+                        build.result in ['ok', 'warn'],
                         not build.docker_executed_commands,
                         build.repo_id.is_travis2docker_build]):
                 continue
+            time.sleep(20)
             build.write({'docker_executed_commands': True})
             run(['docker', 'exec', '-d', '--user', 'root',
                  build.docker_container, '/etc/init.d/ssh', 'start'])
