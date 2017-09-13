@@ -10,35 +10,6 @@ import subprocess
 import requests
 
 from openerp import fields, models, api, tools
-try:
-    from functools import lru_cache
-except ImportError:
-    from backports.functools_lru_cache import lru_cache
-
-
-@lru_cache()
-def _ssh_keyscan(ssh):
-    """This function execute the command 'ssh-keysan' to avoid the question
-    when the command git fetch is excecuted.
-    The question is like to:
-        'Are you sure you want to continue connecting (yes/no)?'"""
-    cmd = ['ssh-keyscan', '-p']
-    match = re.search(r'@(?P<port_host>[^/]+)', ssh)
-    if match:
-        port_host = match.groupdict()['port_host'].split(':')
-        host, port = ((port_host[0], 22) if len(port_host) == 1 else
-                      (port_host[0], port_host[1]))
-        cmd.extend([port, host])
-        with open(os.path.expanduser('~/.ssh/known_hosts'), 'a+') as hosts:
-            new_keys = subprocess.Popen(cmd, stdout=subprocess.PIPE,
-                                        stderr=subprocess.PIPE
-                                        ).stdout.readlines()
-            for key in new_keys:
-                if [line for line in hosts if (line.strip('\n') ==
-                                               key.strip('\n'))]:
-                    continue
-                hosts.write(key + '\n')
-    return True
 
 
 class RunbotBranch(models.Model):
@@ -62,6 +33,30 @@ class RunbotBranch(models.Model):
                 name = ("%(host)s:%(owner)s/%(repo)s (%(branch)s)" %
                         dict(match.groupdict(), branch=branch['branch_name']))
             branch.name_weblate = name
+
+    @tools.ormcache('ssh')
+    def _ssh_keyscan(self, ssh):
+        """This function execute the command 'ssh-keysan' to avoid the question
+        when the command git fetch is excecuted.
+        The question is like to:
+            'Are you sure you want to continue connecting (yes/no)?'"""
+        cmd = ['ssh-keyscan', '-p']
+        match = re.search(r'@(?P<port_host>[^/]+)', ssh)
+        if match:
+            port_host = match.groupdict()['port_host'].split(':')
+            host, port = ((port_host[0], 22) if len(port_host) == 1 else
+                          (port_host[0], port_host[1]))
+            cmd.extend([port, host])
+            with open(os.path.expanduser('~/.ssh/known_hosts'), 'a+') as hosts:
+                new_keys = subprocess.Popen(cmd, stdout=subprocess.PIPE,
+                                            stderr=subprocess.PIPE
+                                            ).stdout.readlines()
+                for key in new_keys:
+                    if [line for line in hosts if (line.strip('\n') ==
+                                                   key.strip('\n'))]:
+                        continue
+                    hosts.write(key + '\n')
+        return True
 
     @tools.ormcache('url', 'token')
     def get_weblate_projects(self, url, token):
@@ -140,7 +135,7 @@ class RunbotBranch(models.Model):
                                                 url_repo])
                     except subprocess.CalledProcessError:
                         pass
-                    _ssh_keyscan(branch.repo_id.weblate_ssh)
+                    self._ssh_keyscan(branch.repo_id.weblate_ssh)
                     subprocess.check_output(cmd + ['fetch', remote])
                     diff = subprocess.check_output(
                         cmd + ['diff', 'heads/%(branch)s..'

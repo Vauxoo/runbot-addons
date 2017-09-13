@@ -17,7 +17,6 @@
     "external_dependencies": {
         "python": [
             'travis2docker',
-            'backports.functools_lru_cache',
         ],
         "bin": [
             'docker',
