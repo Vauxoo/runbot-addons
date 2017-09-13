@@ -10,23 +10,32 @@ import subprocess
 import requests
 
 from openerp import fields, models, api, tools
+try:
+    from functools import lru_cache
+except ImportError:
+    from backports.functools_lru_cache import lru_cache
 
 
+@lru_cache()
 def _ssh_keyscan(ssh):
-    cmd = "ssh-keyscan -p %s %s"
+    """This function execute the command 'ssh-keysan' to avoid the question
+    when the command git fetch is excecuted.
+    The question is like to:
+        'Are you sure you want to continue connecting (yes/no)?'"""
+    cmd = ['ssh-keyscan', '-p']
     match = re.search(r'@(?P<port_host>[^/]+)', ssh)
     if match:
         port_host = match.groupdict()['port_host'].split(':')
         host, port = ((port_host[0], 22) if len(port_host) == 1 else
                       (port_host[0], port_host[1]))
-        cmd = cmd % (port, host)
+        cmd.extend([port, host])
         with open(os.path.expanduser('~/.ssh/known_hosts'), 'a+') as hosts:
-            keys = [k.replace('\n', '') for k in hosts.readlines()]
-            new_keys = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE,
+            new_keys = subprocess.Popen(cmd, stdout=subprocess.PIPE,
                                         stderr=subprocess.PIPE
-                                        ).communicate()[0].split('\n')
+                                        ).stdout.readlines()
             for key in new_keys:
-                if [k for k in keys if k == key]:
+                if [line for line in hosts if (line.strip('\n') ==
+                                               key.strip('\n'))]:
                     continue
                 hosts.write(key + '\n')
 
