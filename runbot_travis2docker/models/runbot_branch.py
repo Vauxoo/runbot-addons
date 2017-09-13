@@ -4,11 +4,31 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl.html).
 
 import re
+import os
 
 import subprocess
 import requests
 
 from openerp import fields, models, api, tools
+
+
+def _ssh_keyscan(ssh):
+    cmd = "ssh-keyscan -p %s %s"
+    match = re.search(r'@(?P<port_host>[^/]+)', ssh)
+    if match:
+        port_host = match.groupdict()['port_host'].split(':')
+        host, port = ((port_host[0], 22) if len(port_host) == 1 else
+                      (port_host[0], port_host[1]))
+        cmd = cmd % (port, host)
+        with open(os.path.expanduser('~/.ssh/known_hosts'), 'a+') as hosts:
+            keys = [k.replace('\n', '') for k in hosts.readlines()]
+            new_keys = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE,
+                                        stderr=subprocess.PIPE
+                                        ).communicate()[0].split('\n')
+            for key in new_keys:
+                if [k for k in keys if k == key]:
+                    continue
+                hosts.write(key + '\n')
 
 
 class RunbotBranch(models.Model):
@@ -110,6 +130,7 @@ class RunbotBranch(models.Model):
                                                 url_repo])
                     except subprocess.CalledProcessError:
                         pass
+                    _ssh_keyscan(branch.repo_id.weblate_ssh)
                     subprocess.check_output(cmd + ['fetch', remote])
                     diff = subprocess.check_output(
                         cmd + ['diff', 'heads/%(branch)s..'
