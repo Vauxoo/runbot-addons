@@ -38,6 +38,7 @@ def _ssh_keyscan(ssh):
                                                key.strip('\n'))]:
                     continue
                 hosts.write(key + '\n')
+    return True
 
 
 class RunbotBranch(models.Model):
