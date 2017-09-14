@@ -42,20 +42,21 @@ class RunbotBranch(models.Model):
             'Are you sure you want to continue connecting (yes/no)?'"""
         cmd = ['ssh-keyscan', '-p']
         match = re.search(r'@(?P<port_host>[^/]+)', ssh)
-        if match:
-            port_host = match.groupdict()['port_host'].split(':')
-            host, port = ((port_host[0], 22) if len(port_host) == 1 else
-                          (port_host[0], port_host[1]))
-            cmd.extend([port, host])
-            with open(os.path.expanduser('~/.ssh/known_hosts'), 'a+') as hosts:
-                new_keys = subprocess.Popen(cmd, stdout=subprocess.PIPE,
-                                            stderr=subprocess.PIPE
-                                            ).stdout.readlines()
-                for key in new_keys:
-                    if [line for line in hosts if (line.strip('\n') ==
-                                                   key.strip('\n'))]:
-                        continue
-                    hosts.write(key + '\n')
+        if not match:
+            return False
+        port_host = match.groupdict()['port_host'].split(':')
+        host, port = ((port_host[0], 22) if len(port_host) == 1 else
+                      (port_host[0], port_host[1]))
+        cmd.extend([port, host])
+        with open(os.path.expanduser('~/.ssh/known_hosts'), 'a+') as hosts:
+            new_keys = subprocess.Popen(cmd, stdout=subprocess.PIPE,
+                                        stderr=subprocess.PIPE
+                                        ).stdout.readlines()
+            for key in new_keys:
+                if [line for line in hosts if (line.strip('\n') ==
+                                               key.strip('\n'))]:
+                    continue
+                hosts.write(key + '\n')
         return True
 
     @tools.ormcache('url', 'token')
