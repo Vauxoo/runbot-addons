@@ -41,13 +41,10 @@ class RunbotBranch(models.Model):
         The question is like to:
             'Are you sure you want to continue connecting (yes/no)?'"""
         cmd = ['ssh-keyscan', '-p']
-        match = re.search(r'@(?P<port_host>[^/]+)', ssh)
+        match = re.search(r'@([^/]+(?=:|/]))?(?::)?([^/]+)?/', ssh)
         if not match:
             return False
-        port_host = match.groupdict()['port_host'].split(':')
-        host, port = ((port_host[0], 22) if len(port_host) == 1 else
-                      (port_host[0], port_host[1]))
-        cmd.extend([port, host])
+        cmd.extend(sorted(match.groups('22')))
         with open(os.path.expanduser('~/.ssh/known_hosts'), 'a+') as hosts:
             new_keys = subprocess.Popen(cmd, stdout=subprocess.PIPE,
                                         stderr=subprocess.PIPE
