@@ -41,7 +41,8 @@ class RunbotBranch(models.Model):
         The question is like to:
             'Are you sure you want to continue connecting (yes/no)?'"""
         cmd = ['ssh-keyscan', '-p']
-        match = re.search(r'@([^/]+(?=:|/]))?(?::)?([^/]+)?/', ssh)
+        match = re.search(r'@(?P<host>[^/]+(?=:|/]))?(?::)?(?P<port>[^/]+)?/',
+                          ssh)
         if not match:
             return False
         cmd.extend(sorted(match.groups('22')))
