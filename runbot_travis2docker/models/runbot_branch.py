@@ -48,9 +48,8 @@ class RunbotBranch(models.Model):
         cmd.extend(sorted(match.groups('22')))
         with open(os.path.expanduser('~/.ssh/known_hosts'), 'a+') as hosts:
             new_keys = subprocess.Popen(cmd, stdout=subprocess.PIPE,
-                                        stderr=subprocess.PIPE
-                                        ).stdout.readlines()
-            for key in new_keys:
+                                        stderr=subprocess.PIPE)
+            for key in new_keys.stdout:
                 if [line for line in hosts if (line.strip('\n') ==
                                                key.strip('\n'))]:
                     continue
