@@ -46,8 +46,8 @@ class RunbotBranch(models.Model):
             ssh)
         if not match:
             return False
-        data = match.groupdict('22')
-        cmd.append(data['port'])
+        data = match.groupdict()
+        cmd.append(data['port'] or '22')
         cmd.append(data['host'])
         with open(os.path.expanduser('~/.ssh/known_hosts'), 'a+') as hosts:
             new_keys = subprocess.Popen(cmd, stdout=subprocess.PIPE,
