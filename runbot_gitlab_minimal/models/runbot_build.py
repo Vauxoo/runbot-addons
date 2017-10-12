@@ -52,7 +52,7 @@ class RunbotBuild(models.Model):
                     state = 'running'
                 elif build.state in ('running', 'done'):
                     state = 'failed'
-                    if build.result == 'ok':
+                    if build.result in ('ok', 'warn'):
                         state = 'success'
                     if build.result == 'ko':
                         state = 'failed'
