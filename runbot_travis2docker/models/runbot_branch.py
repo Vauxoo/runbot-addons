@@ -124,8 +124,12 @@ class RunbotBranch(models.Model):
                         continue
                     component = [item for item in project['components']
                                  if item['git_export']]
-                    if len(component) != 1:
-                        continue
+                    if len(component) > 1:
+                        git_export = component[0]['git_export']
+                        different = [item for item in component if
+                                     item['git_export'] != git_export]
+                        if different:
+                            continue
                     component = component[0]
                     remote = 'wl-%s-%s' % (project['slug'], component['slug'])
                     url_repo = '/'.join([
