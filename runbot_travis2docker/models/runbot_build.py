@@ -5,6 +5,7 @@
 # Allow old api because is based original methods are old api from odoo
 # pylint: disable=old-api7-method-defined
 
+import csv
 import logging
 import os
 import requests
@@ -271,7 +272,7 @@ class RunbotBuild(models.Model):
                 config['db_host'], self.env.cr.dbname,
             )
         cmd += ['-e', 'SERVER_OPTIONS="--log-db=%s"' % logdb]
-
+        cmd += self._get_run_extra()
         return cmd
 
     def _get_run_extra(self):
@@ -280,4 +281,13 @@ class RunbotBuild(models.Model):
         Returns:
             list: Additional arguments to add into docker run command.
         """
-        return []
+        self.ensure_one()
+        if not self.repo_id.docker_run_extra_args:
+            return []
+        f_extra = csv.StringIO(self.repo_id.docker_run_extra_args)
+        f_extra_csv = csv.reader(f_extra)
+        try:
+            extra_cmd = f_extra_csv.next()
+        except StopIteration:
+            extra_cmd = []
+        return extra_cmd

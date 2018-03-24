@@ -23,6 +23,8 @@ class RunbotRepo(models.Model):
     weblate_token = fields.Char()
     weblate_languages = fields.Char(help="List of code iso of languages E.g."
                                     " en_US,es_ES")
+    docker_run_extra_args = fields.Char(
+        help="CSV format for docker run EXTRA_ARGS")
 
     @api.model
     def _default_travis2docker_image(self):
