@@ -287,7 +287,7 @@ class RunbotBuild(models.Model):
         f_extra = csv.StringIO(self.repo_id.docker_run_extra_args)
         f_extra_csv = csv.reader(f_extra)
         try:
-            extra_cmd = f_extra_csv.next()
+            extra_cmd = f_extra_csv.__next__()
         except StopIteration:
             extra_cmd = []
         return extra_cmd

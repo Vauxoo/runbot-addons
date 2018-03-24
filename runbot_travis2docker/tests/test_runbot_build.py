@@ -187,3 +187,17 @@ class TestRunbotJobs(TransactionCase):
                              build.sequence, host, port)
             time.sleep(delay)
         return user_ids
+
+    def test_extra_args(self):
+        repo = self.env.ref('runbot_travis2docker.runbot_repo_demo1')
+        repo.docker_run_extra_args = '--name=hola,-p,8072:8073,80'
+        self.env['ir.config_parameter'].sudo().set_param(
+            "runbot.runbot_max_age", 365*10)
+        self.env['runbot.build'].search([]).unlink()
+        repo._update(repo)
+        build = self.env['runbot.build'].search([], limit=1)
+        build._checkout()
+        cmd = build._get_run_cmd()
+        self.assertIn('--name=hola', cmd)
+        self.assertIn('8072:8073', cmd)
+        self.assertIn('80', cmd)
