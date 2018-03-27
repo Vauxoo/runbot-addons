@@ -11,6 +11,7 @@ import os
 import requests
 import subprocess
 import time
+import socket
 import sys
 from urllib.request import urlopen
 from urllib.error import HTTPError, URLError
@@ -313,5 +314,5 @@ class RunbotBuild(models.Model):
         try:
             urlopen(url, timeout=3)
             urlopen(url, timeout=3)
-        except (HTTPError, URLError) as error:
+        except (HTTPError, URLError, socket.timeout) as error:
             _logger.debug("Error opening instance %s. Error: %s", url, error)
