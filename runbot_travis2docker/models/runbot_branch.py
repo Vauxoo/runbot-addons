@@ -166,3 +166,13 @@ class RunbotBranch(models.Model):
                 'branch_id': record.id,
                 'name': record.branch_name,
                 'uses_weblate': True})
+
+    def _get_branch_quickconnect_url(self, fqdn, dest):
+        self.ensure_one()
+        res = super(RunbotBranch, self)._get_branch_quickconnect_url(
+            fqdn, dest)
+        if self.repo_id.is_travis2docker_build:
+            dbname = "db=%s-all&" % dest
+            res[self.id] = (
+                res[self.id].replace(dbname, "").replace("?debug=1", ""))
+        return res

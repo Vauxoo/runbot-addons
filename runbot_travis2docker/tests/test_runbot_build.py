@@ -201,3 +201,16 @@ class TestRunbotJobs(TransactionCase):
         self.assertIn('--name=hola', cmd)
         self.assertIn('8072:8073', cmd)
         self.assertIn('80', cmd)
+
+    def test_quick_connect(self):
+        repo = self.env.ref('runbot_travis2docker.runbot_repo_demo1')
+        self.env['ir.config_parameter'].sudo().set_param(
+            "runbot.runbot_max_age", 365*10)
+        self.branch_obj.search([('repo_id', '=', repo.id)]).unlink()
+        self.build_obj.search([('repo_id', '=', repo.id)]).unlink()
+        repo._update(repo)
+        build = self.build_obj.search([('repo_id', '=', repo.id)], limit=1)
+        url = build.branch_id._get_branch_quickconnect_url(
+            build.domain, build.dest)[build.branch_id.id]
+        self.assertNotIn('debug', url)
+        self.assertNotIn('-all', url)
