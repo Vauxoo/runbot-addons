@@ -197,12 +197,13 @@ class RunbotBuild(models.Model):
                         not build.docker_executed_commands,
                         build.repo_id.is_travis2docker_build]):
                 continue
+            # Wait to start container and odoo server
             time.sleep(10)
             build.docker_executed_commands = True
             subprocess.call([
                 'docker', 'exec', '-d', '--user', 'root',
                 build.docker_container, '/etc/init.d/ssh', 'start'])
-            ssh_keys = self._get_ssh_keys() or ''
+            ssh_keys = build._get_ssh_keys() or ''
             f_extra_keys = os.path.expanduser('~/.ssh/runbot_authorized_keys')
             if os.path.isfile(f_extra_keys):
                 with open(f_extra_keys) as fobj_extra_keys:
