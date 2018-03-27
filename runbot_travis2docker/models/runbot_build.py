@@ -12,10 +12,12 @@ import requests
 import subprocess
 import time
 import sys
+from urllib.request import urlopen
+from urllib.error import URLError
 
 from odoo import fields, models
 from odoo.tools import config
-from odoo.addons.runbot.common import grep, rfind, time2str
+from odoo.addons.runbot.common import fqdn, grep, rfind, time2str
 from odoo.addons.runbot.models.build import _re_error, _re_warning
 
 try:
@@ -213,6 +215,7 @@ class RunbotBuild(models.Model):
                     "bash", "-c", "echo '%(keys)s' | tee -a '%(dir)s'" % dict(
                         keys=ssh_keys, dir="/home/odoo/.ssh/authorized_keys"),
                 ])
+            RunbotBuild._open_url(build.port, build.host)
         return res
 
     def _get_run_cmd(self):
@@ -291,3 +294,24 @@ class RunbotBuild(models.Model):
         except StopIteration:
             extra_cmd = []
         return extra_cmd
+
+    @staticmethod
+    def _open_url(port, build_host):
+        """Open url instance in order to generate routing map and static files
+        early.
+         - We need a sleep to wait a full starting of odoo instance
+         - We need to open 2 times the url in order to generate:
+            1. Routing map
+            2. GET / HTTP
+        """
+        current_host = fqdn()
+        if current_host != build_host:
+            # There are 2 or more server of runbot and this one is not the
+            # owner of this build.
+            return
+        url = "http://localhost:%(port)s" % dict(port=port)
+        try:
+            urlopen(url)
+            urlopen(url)
+        except URLError:
+            _logger.debug("Error opening instance %s", url)
