@@ -13,7 +13,7 @@ import subprocess
 import time
 import sys
 from urllib.request import urlopen
-from urllib.error import URLError
+from urllib.error import HTTPError, URLError
 
 from odoo import fields, models
 from odoo.tools import config
@@ -311,7 +311,7 @@ class RunbotBuild(models.Model):
             return
         url = "http://localhost:%(port)s" % dict(port=port)
         try:
-            urlopen(url)
-            urlopen(url)
-        except URLError:
-            _logger.debug("Error opening instance %s", url)
+            urlopen(url, timeout=3)
+            urlopen(url, timeout=3)
+        except (HTTPError, URLError) as error:
+            _logger.debug("Error opening instance %s. Error: %s", url, error)
