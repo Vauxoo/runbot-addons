@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<odoo>
+
+    <record id="runbot_repo_demo2" model="runbot.repo">
+        <field name="name">quay.io/vauxoo/fast-travis-test110</field>
+        <field name="is_docker_image" eval="True"/>
+    </record>
+
+</odoo>

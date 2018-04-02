@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+      <template id="inherits_branch_in_menu_runbot" inherit_id="runbot.inherits_branch_in_menu" name="Inherits Show top 5 branches in menu">
+          <xpath expr="//t[@t-foreach='repos[:5]']" position="replace">
+              <t t-if="repos" >
+                   <t t-foreach="repos[:5]" t-as="re">
+                       <li><a t-attf-href="/runbot/repo/{{slug(re)}}?search={{request.params.get('search', '')}}"><i class='fa fa-github' />
+                      <t t-if='re.is_docker_image'>
+                         <t t-esc="re.name"/>
+                       </t>
+                       <t t-else='!re.is_docker_image'>
+                         <t t-esc="re.name.split(':')[1]"/>
+                       </t>
+                       </a></li>
+                   </t>
+              </t>
+          </xpath>
+      </template>
+</odoo>
