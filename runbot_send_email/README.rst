@@ -33,11 +33,11 @@ How to follow a build or repository
 
 This addon allows to follow builds or repositories, for doing so need to be logged in, then with the following buttons, you can watch/unwatch any builds/repositories which you belong to, also if you follow a repository, you will follow the next build created which belongs to that repository.
 
- * **For follow/unfollow a repository** *
- .. image:: https://github.com/vauxoo-dev/runbot-addons/blob/11.0-add_info_readme-jonathanosalc/runbot_send_email/static/img/watch_repo.jpeg
+* **For follow/unfollow a repository**
+ .. image:: https://raw.githubusercontent.com/Vauxoo/runbot-addons/11.0/runbot_send_email/static/img/watch_repo.jpeg
 
- * **For follow/unfollow a build** *
- .. image:: https://github.com/vauxoo-dev/runbot-addons/blob/11.0-add_info_readme-jonathanosalc/runbot_send_email/static/img/watch_build.jpeg
+* **For follow/unfollow a build**
+ .. image:: https://raw.githubusercontent.com/Vauxoo/runbot-addons/11.0/runbot_send_email/static/img/watch_build.png
 
 Requirements:
 ==============
