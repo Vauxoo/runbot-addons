@@ -28,16 +28,16 @@ This addon sends the results of the Runbot builds through email, Runbot send the
 
  .. image:: https://raw.githubusercontent.com/Vauxoo/runbot-addons/11.0/runbot_send_email/static/img/is.png
 
- How to follow a build or repository?
- ------------------------------------
+How to follow a build or repository
+------------------------------------
 
-This addon also allow to follow builds or repositories, for doing that, you need has logged in runbot, then with the following buttons, you can watch/unwatch any builds/repositories that you belong see. Also if you follow a repository, you will follow the next build created that belong that repository.
+This addon allows to follow builds or repositories, for doing so need to be logged in, then with the following buttons, you can watch/unwatch any builds/repositories which you belong to, also if you follow a repository, you will follow the next build created which belongs to that repository.
 
  * **For follow/unfollow a repository** *
- .. image:: https://raw.githubusercontent.com/Vauxoo/runbot-addons/11.0/runbot_send_email/static/img/watch_repo.png
+ .. image:: https://github.com/vauxoo-dev/runbot-addons/blob/11.0-add_info_readme-jonathanosalc/runbot_send_email/static/img/watch_repo.jpeg
 
  * **For follow/unfollow a build** *
- .. image:: https://raw.githubusercontent.com/Vauxoo/runbot-addons/11.0/runbot_send_email/static/img/watch_build.png
+ .. image:: https://github.com/vauxoo-dev/runbot-addons/blob/11.0-add_info_readme-jonathanosalc/runbot_send_email/static/img/watch_build.jpeg
 
 Requirements:
 ==============
