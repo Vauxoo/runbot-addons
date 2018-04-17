@@ -53,6 +53,7 @@ class RunbotBranch(models.Model):
             new_keys = subprocess.Popen(cmd, stdout=subprocess.PIPE,
                                         stderr=subprocess.PIPE)
             for key in new_keys.stdout:
+                key = key.decode('UTF-8')
                 if [line for line in hosts if (line.strip('\n') ==
                                                key.strip('\n'))]:
                     continue
