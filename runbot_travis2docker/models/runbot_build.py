@@ -310,5 +310,5 @@ class RunbotBuild(models.Model):
         try:
             urlopen(url, timeout=3)
             urlopen(url, timeout=3)
-        except (HTTPError, URLError, socket.timeout) as error:
+        except (HTTPError, URLError, socket.timeout, ConnectionResetError) as error:
             _logger.debug("Error opening instance %s. Error: %s", url, error)
