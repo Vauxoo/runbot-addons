@@ -1,9 +1,13 @@
+# Copyright <2018> <Vauxoo info@vauxoo.com>
+# License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
+
+import logging
+import subprocess
+import time
+import xmlrpc.client
+
 from odoo.tests.common import TransactionCase
 from odoo.tools.misc import mute_logger
-import xmlrpc.client
-import logging
-import time
-import subprocess
 
 _logger = logging.getLogger(__name__)
 

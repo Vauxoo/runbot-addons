@@ -1,9 +1,12 @@
-from odoo.http import request
-from odoo import http, tools
-import logging
-import json
-import datetime
+# Copyright <2018> <Vauxoo info@vauxoo.com>
+# License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
+import datetime
+import json
+import logging
+
+from odoo import http, tools
+from odoo.http import request
 
 _logger = logging.getLogger(__name__)
 

@@ -1,9 +1,14 @@
-from odoo import models, fields, tools
-from datetime import datetime
-from dateutil import parser
-import subprocess
+# Copyright <2018> <Vauxoo info@vauxoo.com>
+# License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
+
 import logging
 import os
+import subprocess
+from datetime import datetime
+
+from dateutil import parser
+
+from odoo import fields, models, tools
 
 _logger = logging.getLogger(__name__)
 
@@ -34,10 +39,10 @@ class RunbotRepo(models.Model):
         return res
 
     def set_fetch_head(self, filename):
-        fetch_file = open(filename, 'w')
-        fetch_file.write(datetime.now().strftime(
-            tools.DEFAULT_SERVER_DATETIME_FORMAT))
-        fetch_file.close()
+        """Simulate a change in the file in order to works similar to git"""
+        with open(filename, 'w') as fetch_file:
+            fetch_file.write(datetime.now().strftime(
+                tools.DEFAULT_SERVER_DATETIME_FORMAT))
         return True
 
     def get_fetch_head(self, filename):
@@ -51,8 +56,8 @@ class RunbotRepo(models.Model):
         return datetime.strptime(
             fetch_time, tools.DEFAULT_SERVER_DATETIME_FORMAT)
 
-    def create_build_orchest(self):
-        """Method create a build for image of orchestv
+    def create_build_docker(self):
+        """Method create a build for image of docker
         """
         repo = self
         build_obj = self.env['runbot.build']
@@ -94,4 +99,4 @@ class RunbotRepo(models.Model):
     def _update_git(self):
         if not self.is_docker_image:
             return super(RunbotRepo, self)._update_git()
-        self.create_build_orchest()
+        self.create_build_docker()
