@@ -47,7 +47,7 @@ class RunbotBuild(models.Model):
             '-t', build.branch_id.pull_head_name, '/entrypoint.sh'
         ]
         subprocess.call(['docker', 'rm', '-vf', build._get_docker_container()])
-        return self._spawn(cmd, lock_path, log_path, cpu_limit=1200)
+        return self._spawn(cmd, lock_path, log_path, cpu_limit=2100)
 
     def _job_21_coverage(self, build, lock_path, log_path):
         if not build.repo_id.is_docker_image:
@@ -62,7 +62,7 @@ class RunbotBuild(models.Model):
         cmd = [
             'docker', 'start', '-i', build._get_docker_container()
         ]
-        return self._spawn(cmd, lock_path, log_path, cpu_limit=1200)
+        return self._spawn(cmd, lock_path, log_path, cpu_limit=None)
 
     def _local_cleanup(self):
         builds = self.filtered('branch_id.repo_id.is_docker_image')
