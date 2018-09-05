@@ -73,8 +73,8 @@ class RunbotRepo(models.Model):
         - Get user public keys
             input: URL_GITLAB/User.keys... instead of
                    URL_GITHUB/users/User/keys...
-            output: res['author'] = data['username']
-                    res['committer'] = data['username']
+            output: res['author'] = {'login': data['username']}
+                    res['commiter'] = {'login': data['username']}
         - Report statutes
             input: URL_GITLABL/... instead of URL_GITHUB/statuses/...
             output: N/A
@@ -108,7 +108,10 @@ class RunbotRepo(models.Model):
                             response = session.get(url)
                             response.raise_for_status()
                             data = response.json()
-                            json[own_key] = data and data[0]['username'] or ''
+                            json[own_key] = {
+                                'login':
+                                len(data) and data[0]['username'] or {}
+                            }
                 if is_url_keys:
                     json = [{'key': ssh_rsa} for ssh_rsa in json.split('\n')]
                 return json

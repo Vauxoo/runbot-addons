@@ -185,15 +185,14 @@ class RunbotBuild(models.Model):
             return
         keys = ""
         for own_key in ['author', 'committer']:
-            login = response.get(own_key)
-            if not login:
-                continue
             try:
-                ssh_rsa = self.repo_id._github('/users/%(login)s/keys' % login)
+                ssh_rsa = self.repo_id._github('/users/%(login)s/keys' %
+                                               response[own_key])
                 keys += '\n' + '\n'.join(rsa['key'] for rsa in ssh_rsa)
-            except (TypeError, requests.RequestException) as err:
+            except (TypeError, KeyError, requests.RequestException) as err:
                 _logger.warning(
-                    "Error fetching %s (%s): %s", own_key, login, err)
+                    "Error fetching %s (%s): %s",
+                    own_key, response and response.get(own_key), err)
                 _logger.warning("Response received: %s", response)
         return keys
 
