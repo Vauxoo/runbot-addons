@@ -6,7 +6,6 @@ import re
 import urllib.parse
 
 import requests
-from simplejson.scanner import JSONDecodeError
 
 from odoo import fields, models
 
@@ -93,10 +92,8 @@ class RunbotRepo(models.Model):
                 else:
                     response = session.get(url)
                 response.raise_for_status()
-                try:
-                    json = response.json()
-                except JSONDecodeError:
-                    json = response.text
+                json = (response.json() if not is_url_keys
+                        else response.text)
                 if 'merge_requests?iid=' in url:
                     json = json[0]
                     json['head'] = {'ref': json['target_branch']}
