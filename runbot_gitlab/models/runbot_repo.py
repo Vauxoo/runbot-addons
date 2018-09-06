@@ -6,6 +6,7 @@ import re
 import urllib.parse
 
 import requests
+from simplejson.scanner import JSONDecodeError
 
 from odoo import fields, models
 
@@ -74,7 +75,7 @@ class RunbotRepo(models.Model):
             input: URL_GITLAB/User.keys... instead of
                    URL_GITHUB/users/User/keys...
             output: res['author'] = {'login': data['username']}
-                    res['commiter'] = {'login': data['username']}
+                    res['committer'] = {'login': data['username']}
         - Report statutes
             input: URL_GITLABL/... instead of URL_GITHUB/statuses/...
             output: N/A
@@ -92,8 +93,10 @@ class RunbotRepo(models.Model):
                 else:
                     response = session.get(url)
                 response.raise_for_status()
-                json = (response.json() if not is_url_keys
-                        else response._content)
+                try:
+                    json = response.json()
+                except JSONDecodeError:
+                    json = response.text
                 if 'merge_requests?iid=' in url:
                     json = json[0]
                     json['head'] = {'ref': json['target_branch']}
@@ -109,8 +112,7 @@ class RunbotRepo(models.Model):
                             response.raise_for_status()
                             data = response.json()
                             json[own_key] = {
-                                'login':
-                                len(data) and data[0]['username'] or {}
+                                'login': data and data[0]['username'] or ''
                             }
                 if is_url_keys:
                     json = [{'key': ssh_rsa} for ssh_rsa in json.split('\n')]
