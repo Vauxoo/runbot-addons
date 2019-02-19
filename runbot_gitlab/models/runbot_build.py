@@ -49,6 +49,12 @@ class RunbotBuild(models.Model):
                     state = 'failed'
                     if build.result == 'ok':
                         state = 'success'
+                    if build.result == 'warn' and\
+                            not build.repo_id.warnings_are_errors:
+                        # as long as the gitlab api doesn't support
+                        # success_with_warnings, we pass success and a comment
+                        state = 'success'
+                        desc = "WARNING\n" + desc
                     if build.result == 'ko':
                         state = 'failed'
                     if build.result == 'skipped':
@@ -66,7 +72,7 @@ class RunbotBuild(models.Model):
                     "context": "ci/runbot"
                 }
                 if build.coverage:
-                    status['coverage'] = build.coverage
+                    status['coverage'] = build.coverage_result
                 _logger.debug("gitlab updating status %s to %s", build.name,
                               state)
                 response = session.post(_url, status)

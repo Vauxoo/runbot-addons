@@ -34,7 +34,7 @@ def _get_url(url, base):
             url = url + '.keys'
         if '/pulls/' in url:
             urls = url.split('/pulls/')
-            url = urls[0] + '/merge_requests?iid=' + urls[1]
+            url = urls[0] + '/merge_requests/' + urls[1]
     return url
 
 
@@ -50,6 +50,11 @@ class RunbotRepo(models.Model):
 
     uses_gitlab = fields.Boolean(help='Enable the ability to use gitlab '
                                       'instead of github')
+    warnings_are_errors = fields.Boolean(
+        'Treat warnings as errors',
+        default=True, help='When runbot reports warnings, report that as '
+        'error to gitlab',
+    )
 
     def _git(self, cmd):
         """Rewriting the parent method to get merge_request from gitlab"""
@@ -94,10 +99,18 @@ class RunbotRepo(models.Model):
                 response.raise_for_status()
                 json = (response.json() if not is_url_keys
                         else response.text)
-                if 'merge_requests?iid=' in url:
-                    json = json[0]
-                    json['head'] = {'ref': json['target_branch']}
-                    json['base'] = {'ref': json['source_branch']}
+                if 'merge_requests/' in url:
+                    json['head'] = {
+                        'ref': json['source_branch'],
+                        # github api returns a label like
+                        # 'source-project-name:source-branch-name' the closest
+                        # we got in gitlab api is
+                        # 'source_project_id:source_branch'
+                        # (without additional http/db requests)
+                        'label': '%s:%s' % (
+                            json['source_project_id'], json['source_branch']),
+                    }
+                    json['base'] = {'ref': json['target_branch']}
                 if '/commits/' in url:
                     for own_key in ['author', 'committer']:
                         key_email = '%s_email' % own_key
