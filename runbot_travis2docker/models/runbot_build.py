@@ -246,6 +246,8 @@ class RunbotBuild(models.Model):
             self.repo_id.id
         )[1].split('/')[-1]
         wl_cmd_env = []
+        github_token = self.env['ir.config_parameter'].sudo().get_param(
+            'runbot.github_token') or self.repo_id.token
         cmd = [
             'docker', 'run',
             '-e', 'INSTANCE_ALIVE=1',
@@ -256,7 +258,7 @@ class RunbotBuild(models.Model):
             '-e', 'START_SSH=1',
             '-e', 'TEST_ENABLE=%d' % (
                 not self.repo_id.travis2docker_test_disable),
-            '-e', 'GITHUB_TOKEN=%s' % self.repo_id.token,
+            '-e', 'GITHUB_TOKEN=%s' % github_token,
             '-p', '%d:%d' % (self.port, 8069),
             '-p', '%d:%d' % (self.port + 1, 22),
         ] + pr_cmd_env + wl_cmd_env
