@@ -256,6 +256,7 @@ class RunbotBuild(models.Model):
             '-e', 'START_SSH=1',
             '-e', 'TEST_ENABLE=%d' % (
                 not self.repo_id.travis2docker_test_disable),
+            '-e', 'GITHUB_TOKEN=%s' % self.repo_id.token,
             '-p', '%d:%d' % (self.port, 8069),
             '-p', '%d:%d' % (self.port + 1, 22),
         ] + pr_cmd_env + wl_cmd_env
