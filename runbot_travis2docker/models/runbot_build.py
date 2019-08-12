@@ -67,6 +67,9 @@ class RunbotBuild(models.Model):
             "-t", build.docker_image,
             build.dockerfile_path,
         ]
+        token = build._get_github_token()
+        if token:
+            cmd.extend(['--build-arg', 'GITHUB_TOKEN=%s' % token])
         return self._spawn(cmd, lock_path, log_path, cpu_limit=1200)
 
     def _job_20_test_all(self, build, lock_path, log_path):
@@ -129,6 +132,12 @@ class RunbotBuild(models.Model):
         cmd = ['docker', 'start', '-i', build.docker_container]
         return self._spawn(cmd, lock_path, log_path, cpu_limit=None)
 
+    def _get_github_token(self):
+        self.ensure_one()
+        github_token = self.env['ir.config_parameter'].sudo().get_param(
+            'runbot.github_token') or self.repo_id.token
+        return github_token
+
     def _checkout(self):
         builds = self.filtered('branch_id.repo_id.is_travis2docker_build')
         super(RunbotBuild, self - builds)._checkout()
@@ -152,6 +161,8 @@ class RunbotBuild(models.Model):
                 '--runs-at-the-end-script=pg_isready -q && '
                 '/etc/init.d/postgresql stop'
             ]
+            if build._get_github_token():
+                sys.argv.append("--build-env-args=GITHUB_TOKEN")
             try:
                 path_scripts = t2d()
             except BaseException:  # TODO: Add custom exception to t2d
@@ -246,8 +257,6 @@ class RunbotBuild(models.Model):
             self.repo_id.id
         )[1].split('/')[-1]
         wl_cmd_env = []
-        github_token = self.env['ir.config_parameter'].sudo().get_param(
-            'runbot.github_token') or self.repo_id.token
         cmd = [
             'docker', 'run',
             '-e', 'INSTANCE_ALIVE=1',
@@ -258,7 +267,6 @@ class RunbotBuild(models.Model):
             '-e', 'START_SSH=1',
             '-e', 'TEST_ENABLE=%d' % (
                 not self.repo_id.travis2docker_test_disable),
-            '-e', 'GITHUB_TOKEN=%s' % github_token,
             '-p', '%d:%d' % (self.port, 8069),
             '-p', '%d:%d' % (self.port + 1, 22),
         ] + pr_cmd_env + wl_cmd_env
