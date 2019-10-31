@@ -267,7 +267,7 @@ class RunbotBuild(models.Model):
             '-e', 'START_SSH=1',
             '-e', 'TEST_ENABLE=%d' % (
                 not self.repo_id.travis2docker_test_disable),
-            '-p', '%d:%d' % (self.port, 8069),
+            '-p', '127.0.0.1:%d:%d' % (self.port, 8069),
             '-p', '%d:%d' % (self.port + 1, 22),
         ] + pr_cmd_env + wl_cmd_env
         cmd.extend(['--name=' + self.docker_container, '-t',
