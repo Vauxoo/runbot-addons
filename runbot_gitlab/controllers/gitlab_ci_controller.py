@@ -25,6 +25,11 @@ class RunbotCIController(RunbotHook):
             project = data.get('project') or data.get('repository')
             ssh_url = project.get('git_ssh_url') or project.get('ssh_url')
             http_url = project.get('git_http_url') or project.get('http_url')
+            if event == "build":
+                # The "jobs" webhook only are triggered from from dev projects
+                # but we need to match with stable one
+                ssh_url = ssh_url.replace("-dev/", "/")
+                http_url = http_url.replace("-dev/", "/")
             repo_domain = ['|', '|', ('name', '=', ssh_url),
                            ('name', '=', http_url),
                            ('name', '=', http_url.rstrip('.git'))]
