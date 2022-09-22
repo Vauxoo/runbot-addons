@@ -40,6 +40,7 @@ class RunbotBuild(models.Model):
     docker_executed_commands = fields.Boolean(
         help='True: Executed "docker exec CONTAINER_BUILD custom_commands"',
         readonly=True, copy=False)
+    deployv_image_built = fields.Boolean('DeployV image was already built?')
 
     def _get_docker_image(self):
         self.ensure_one()
@@ -140,11 +141,14 @@ class RunbotBuild(models.Model):
 
     def _checkout(self):
         builds = self.filtered('branch_id.repo_id.is_travis2docker_build')
+        builds_waiting_image = builds.filtered(lambda b: b.repo_id.is_t2d_deployv and not b.deployv_image_built)
         super(RunbotBuild, self - builds)._checkout()
         to_be_skipped_ids = builds
-        for build in builds:
-            branch_short_name = build.branch_id.name.replace(
-                'refs/heads/', '', 1).replace('refs/pull/', 'pull/', 1)
+        for build in (builds - builds_waiting_image):
+            branch_short_name = (
+                build.branch_id.name.replace('refs/heads/', '', 1).replace('refs/pull/', 'pull/', 1)
+                if not build.repo_id.is_t2d_deployv else build.name
+            )
             t2d_path = os.path.join(build.repo_id._root(), 'travis2docker')
             repo_name = build.repo_id.name
             if not any((repo_name.startswith('https://'),
@@ -156,32 +160,40 @@ class RunbotBuild(models.Model):
                 'travisfile2dockerfile', repo_name,
                 branch_short_name, '--root-path=' + t2d_path,
                 '--exclude-after-success',
-                '--docker-image=%s' % build.repo_id.travis2docker_image,
                 # Avoid corruption of postgresql
                 '--runs-at-the-end-script=pg_isready -q && '
                 '/etc/init.d/postgresql stop'
             ]
+            if build.repo_id.travis2docker_image and not build.repo_id.is_t2d_deployv:
+                sys.argv.append('--docker-image=%s' % build.repo_id.travis2docker_image)
+            if build.repo_id.is_t2d_deployv:
+                sys.argv.append('--deployv')
             if build._get_github_token():
                 sys.argv.append("--build-env-args=GITHUB_TOKEN")
             try:
-                path_scripts = t2d()
+                _logger.warning(' '.join(sys.argv))
+                path_scripts = t2d(return_result=True)
             except BaseException:  # TODO: Add custom exception to t2d
                 path_scripts = []
             for path_script in path_scripts:
                 df_content = open(os.path.join(
                     path_script, 'Dockerfile')).read()
                 if ' TESTS=1' in df_content or ' TESTS="1"' in df_content or \
-                        " TESTS='1'" in df_content:
+                        " TESTS='1'" in df_content or build.repo_id.is_t2d_deployv:
                     build.dockerfile_path = path_script
                     build.docker_image = build._get_docker_image()
                     build.docker_container = build._get_docker_container()
                     if build in to_be_skipped_ids:
                         to_be_skipped_ids -= build
                     break
-        if to_be_skipped_ids:
+        if to_be_skipped_ids - builds_waiting_image:
             _logger.info('Dockerfile without TESTS=1 env. '
                          'Skipping builds %s', to_be_skipped_ids.ids)
             to_be_skipped_ids._skip()
+        if builds_waiting_image:
+            _logger.info('Waiting for deployv image built in quay.io '
+                         'Skipping builds %s', builds_waiting_image.ids)
+            builds_waiting_image._skip()
 
     def _local_cleanup(self):
         builds = self.filtered('branch_id.repo_id.is_travis2docker_build')
@@ -235,6 +247,11 @@ class RunbotBuild(models.Model):
                     build.docker_container,
                     "bash", "-c", "echo '%(keys)s' | tee -a '%(dir)s'" % dict(
                         keys=ssh_keys, dir="/home/odoo/.ssh/authorized_keys"),
+                ])
+            if build.repo_id.is_t2d_deployv:
+                # Deployv use .ssh as volume it needs to change the owner to be able to connect
+                subprocess.call([
+                    "docker", "exec", "-d", "--user", "root", build.docker_container, "chown", "-R", "odoo:odoo", "/home/odoo/.ssh",
                 ])
             RunbotBuild._open_url(build.port, build.host)
         return res

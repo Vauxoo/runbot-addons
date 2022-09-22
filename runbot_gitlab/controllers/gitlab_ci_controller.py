@@ -20,7 +20,7 @@ class RunbotCIController(RunbotHook):
             return self.hook(repo_id, **post)
         data = request.jsonrequest
         event = data.get('object_kind')
-        if event in ['push', 'merge_request']:
+        if event in ['push', 'merge_request', 'build']:
             # Compatible with gitlab version >=8.5 and <8.5
             project = data.get('project') or data.get('repository')
             ssh_url = project.get('git_ssh_url') or project.get('ssh_url')
@@ -30,6 +30,14 @@ class RunbotCIController(RunbotHook):
                            ('name', '=', http_url.rstrip('.git'))]
             repo = request.env['runbot.repo'].sudo().search(repo_domain,
                                                             limit=1)
-            if repo:
+            if repo and event != 'build':
                 return self.hook(repo.id, **post)
+            if event == "build" and data["build_name"] == "build_deployv" and data["build_status"] == "success" and repo and repo.is_t2d_deployv:
+                build_domain = [("repo_id", "=", repo.id), ("name", "=", data["sha"])]
+                build = request.env["runbot.build"].sudo().search(build_domain, order='id DESC')
+                if build:
+                    build.write({"deployv_image_built": True})
+                    forced_builds = build._force("Image built so rebuild runbot job")
+                    if forced_builds:
+                        forced_builds.write({"deployv_image_built": True})
         return ""

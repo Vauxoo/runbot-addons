@@ -8,6 +8,7 @@
         <xpath expr="//group[@name='repo_group']" position="after">
           <group name="travis2docker">
             <field name="is_travis2docker_build"/>
+            <field name="is_t2d_deployv"/>
             <field name="travis2docker_test_disable" attrs="{'invisible': [('is_travis2docker_build', '=', False)]}"/>
             <field name="travis2docker_image"
                    attrs="{'invisible': [('is_travis2docker_build', '=', False)],

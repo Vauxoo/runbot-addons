@@ -10,6 +10,7 @@ class RunbotRepo(models.Model):
     _inherit = "runbot.repo"
 
     is_travis2docker_build = fields.Boolean('Travis to docker build')
+    is_t2d_deployv = fields.Boolean('Use t2d --deployv')
     travis2docker_test_disable = fields.Boolean('Test Disable?')
     travis2docker_image = fields.Char(
         default=lambda s: s._default_travis2docker_image(),
