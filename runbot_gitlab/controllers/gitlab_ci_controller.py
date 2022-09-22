@@ -32,7 +32,8 @@ class RunbotCIController(RunbotHook):
                                                             limit=1)
             if repo and event != 'build':
                 return self.hook(repo.id, **post)
-            if event == "build" and data["build_name"] == "build_deployv" and data["build_status"] == "success" and repo and repo.is_t2d_deployv:
+            if (event == "build" and data["build_name"] in ("build_deployv", "build_docker") and
+                data["build_status"] == "success" and repo and repo.is_t2d_deployv):
                 build_domain = [("repo_id", "=", repo.id), ("name", "=", data["sha"])]
                 build = request.env["runbot.build"].sudo().search(build_domain, order='id DESC')
                 if build:
