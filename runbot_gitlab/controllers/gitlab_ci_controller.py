@@ -35,7 +35,7 @@ class RunbotCIController(RunbotHook):
             if (event == "build" and data["build_name"] in ("build_deployv", "build_docker") and
                 data["build_status"] == "success" and repo and repo.is_t2d_deployv):
                 build_domain = [("repo_id", "=", repo.id), ("name", "=", data["sha"])]
-                build = request.env["runbot.build"].sudo().search(build_domain, order='id DESC')
+                build = request.env["runbot.build"].sudo().search(build_domain, order='id DESC', limit=1)
                 if build:
                     build.write({"deployv_image_built": True})
                     forced_builds = build._force("Image built so rebuild runbot job")
