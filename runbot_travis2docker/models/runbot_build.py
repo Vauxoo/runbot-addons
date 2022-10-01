@@ -30,6 +30,15 @@ _logger = logging.getLogger(__name__)
 
 MAGIC_PID_RUN_NEXT_JOB = -2
 
+import traceback
+subprocess_call_original = subprocess.call
+def custom_call(*args, **kwargs):
+    _logger.warning("subprocess.call(%s, %s) called from %s\nformat_exc %s", args, kwargs, '\n\t'.join(map(str, traceback.extract_stack())), traceback.format_exc())
+    res = subprocess_call_original(*args, **kwargs)
+    _logger.warning("subprocess.call(%s, %s) finished.", args, kwargs)
+    return res
+subprocess.call = custom_call
+
 
 class RunbotBuild(models.Model):
     _inherit = 'runbot.build'
