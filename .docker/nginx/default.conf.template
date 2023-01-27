@@ -1,0 +1,28 @@
+upstream runbot {
+    server odoo:8069 weight=1 max_fails=3 fail_timeout=200m;
+}
+
+upstream runbotpoll {
+    server odoo:8072 weight=1 max_fails=3 fail_timeout=200m;
+}
+
+server {
+    listen 80;
+    server_name *.${NGINX_SERVER_NAME};
+
+    proxy_send_timeout 200m;
+    proxy_read_timeout 200m;
+    proxy_connect_timeout 200m;
+    proxy_set_header X-Forwarded-Host $host;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header X-Real-IP $remote_addr;
+
+    location / {
+        proxy_pass http://runbot;
+    }
+
+    location /longpolling {
+        proxy_pass http://runbotpoll;
+    }
+}

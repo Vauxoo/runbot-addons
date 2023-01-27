@@ -1,0 +1,28 @@
+name: vxrun
+services:
+  odoo:
+    build: odoo
+    depends_on:
+      - db
+    group_add:
+      - "$DOCKER_GID"
+    ports:
+      - "8069"
+      - "8072"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+  db:
+    image: postgres:13
+    environment:
+      - POSTGRES_USER=odoo
+      - POSTGRES_PASSWORD=odoo
+  proxy:
+    image: nginx:1.23
+    depends_on:
+      - odoo
+    environment:
+      - NGINX_SERVER_NAME=$RUNBOT_NAME
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx:/etc/nginx/templates

@@ -54,3 +54,6 @@ docs/_build/
 # Backup files
 *~
 *.swp
+
+# Generated host specific compose file
+.docker/compose.yaml

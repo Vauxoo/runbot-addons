@@ -1,0 +1,43 @@
+#!/usr/bin/env python3
+import argparse
+import configparser
+import getpass
+import os
+import psycopg2
+import sys
+import time
+
+
+if __name__ == '__main__':
+    if not os.environ.get("ODOO_RC"):
+        print("Missing configuration file. Unable to find connection settings.")
+        sys.exit(1)
+
+    arg_parser = argparse.ArgumentParser()
+    arg_parser.add_argument('--timeout', type=int, default=30)
+    args = arg_parser.parse_args()
+
+    config = configparser.ConfigParser()
+    config.read(os.environ.get("ODOO_RC"))
+    config = config["options"]
+
+    db_user = config.get("db_user", getpass.getuser())
+    db_host = config.get("db_host")
+    db_port = config.getint("db_port", 5432)
+    db_password = config.get("db_password")
+
+    start_time = time.time()
+    while (time.time() - start_time) < args.timeout:
+        try:
+            conn = psycopg2.connect(user=db_user, host=db_host, port=db_port, password=db_password, dbname='postgres')
+            error = ''
+            break
+        except psycopg2.OperationalError as e:
+            error = e
+        else:
+            conn.close()
+        time.sleep(1)
+
+    if error:
+        print("Database connection failure: %s" % error, file=sys.stderr)
+        sys.exit(1)

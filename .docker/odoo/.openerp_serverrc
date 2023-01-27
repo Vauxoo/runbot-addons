@@ -1,0 +1,13 @@
+[options]
+addons_path=${HOME}/instance/dependencies/runbot-addons,
+    ${HOME}/instance/dependencies/odoo-extra,
+    ${HOME}/instance/odoo/addons,
+    ${HOME}/instance/odoo/odoo/addons
+db_host = db
+db_user = odoo
+db_password = odoo
+db_name = runbot
+dbfilter = runbot
+workers = 2
+logfile = /home/runbot/odoo.log
+log-level = warn
