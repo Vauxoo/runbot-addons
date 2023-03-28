@@ -12,7 +12,9 @@ RUN apt update; \
       tee /etc/apt/sources.list.d/docker.list > /dev/null; \
     apt update; \
     apt -y --no-install-recommends install docker-ce; \
-    useradd -m runbot;
+    useradd -m runbot; \
+    chown -R runbot:runbot /var/lib/nginx; \
+    chown -R runbot:runbot /var/log/nginx;
 
 USER runbot
 RUN mkdir -p ~/instance; \
