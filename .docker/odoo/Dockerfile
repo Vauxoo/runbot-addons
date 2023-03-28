@@ -3,7 +3,7 @@ FROM ubuntu:18.04
 RUN apt update; \
     DEBIAN_FRONTEND=noninteractive apt -y --no-install-recommends install \
       ca-certificates curl gnupg lsb-release python3-pip python3-dev python3-lxml libsasl2-dev libldap2-dev ssh \
-      libjpeg-dev libpq-dev libssl1.0-dev build-essential python3-matplotlib nodejs-dev node-gyp npm git locales;  \
+      libjpeg-dev libpq-dev libssl1.0-dev build-essential python3-matplotlib nodejs-dev node-gyp npm nginx git locales;  \
     locale-gen en_US.UTF-8; \
     mkdir -p /etc/apt/keyrings; \
     curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg; \
