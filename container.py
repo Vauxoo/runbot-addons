@@ -33,7 +33,8 @@ def main():
     )
 
     print(
-        "Success. You can now start your Runbot instance with 'docker compose -f .docker/compose.yaml up'. "
+        "Success. You can now start your Runbot instance with 'docker compose -f .docker/compose.yaml up'."
+        "\nTODO: Run the following command in the runbot container: 'chown runbot:runbot /var/run/docker.sock && docker login quay.io'"
     )
 
 
