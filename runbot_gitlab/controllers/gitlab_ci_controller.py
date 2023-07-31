@@ -36,8 +36,8 @@ class RunbotCIController(RunbotHook):
                 data["build_status"] == "success"):
                 # The "jobs" webhook only are triggered from from dev projects
                 # but we need to match with stable one
-                ssh_url_stb = ssh_url.replace("-dev", "/")
-                http_url_stb = http_url.replace("-dev", "/")
+                ssh_url_stb = ssh_url.replace("-dev", "")
+                http_url_stb = http_url.replace("-dev", "")
                 repo_domain = [
                     '|', '|', ('name', '=', ssh_url_stb),
                     ('name', '=', http_url_stb),
