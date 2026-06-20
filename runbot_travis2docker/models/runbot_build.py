@@ -266,6 +266,17 @@ class RunbotBuild(models.Model):
                         keys=ssh_keys, dir="/home/odoo/.ssh/authorized_keys"),
                 ])
             RunbotBuild._open_url(build.port, build.host)
+            try:
+                pregenerate_assets_cmd = (
+                    "echo \"env['ir.qweb']._pregenerate_assets_bundles(); env.cr.commit()\" | "
+                    "python3 /home/odoo/instance/odoo/odoo-bin shell -d odoo --stop-after-init"
+                )
+                pregenerate_assets_exec_cmd = ['docker', 'exec', '--user', 'odoo', build.docker_container, 'bash', '-c', pregenerate_assets_cmd]
+                result = subprocess.run(pregenerate_assets_exec_cmd, capture_output=True, text=True, check=False, timeout=360)
+                _logger.info("Result for %s _pregenerate_assets_bundles %s", build.docker_container, result)
+            except Exception as e:
+                _logger.error("Failed _pregenerate_assets_bundles assets for %s: %s", build.docker_container, e)
+
         return res
 
     def _get_docker_run_cmd(self):
