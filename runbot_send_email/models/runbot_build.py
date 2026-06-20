@@ -58,5 +58,5 @@ class RunbotBuild(models.Model):
             email = build.committer_email.lstrip('<').rstrip('>')
             partner = self.env['res.partner'].search([
                 ('email', '=ilike', email)], limit=1)
-            if partner and partner not in self.message_partner_ids:
+            if partner and partner not in self.mapped("message_partner_ids"):
                 self.message_subscribe_users(user_ids=partner.user_ids.ids)
