@@ -403,6 +403,9 @@ class RunbotBuild(models.Model):
                     params={"lang": lang},
                     timeout=120,
                 )
+            # Odoo 17.0+ has dark theme based on system but by default get light one
+            # manually called to warn up the cache with dark too
+            s.get(f"{url}/web/assets/any/web.assets_web_dark.min.css", timeout=120)
             _logger.info("Warmup completed for domain %s", self.domain)
         except Exception as error:
             _logger.warning("Warmup failed for domain %s: %s", self.domain, error)
