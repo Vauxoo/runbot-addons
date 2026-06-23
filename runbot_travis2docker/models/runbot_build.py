@@ -269,6 +269,12 @@ class RunbotBuild(models.Model):
                     "bash", "-c", "echo '%(keys)s' | tee -a '%(dir)s'" % dict(
                         keys=ssh_keys, dir="/home/odoo/.ssh/authorized_keys"),
                 ])
+            # Deactivate all ir_cron
+            subprocess.call([
+                'docker', 'exec', '-d', '--user', 'odoo',
+                build.docker_container,
+                'bash', '-c', 'psql odoo -c "UPDATE ir_cron SET active=False"',
+            ])
             build._open_url()
         return res
 
