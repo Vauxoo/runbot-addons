@@ -4,6 +4,8 @@
 import csv
 import logging
 import os
+import json
+import re
 import requests
 import subprocess
 import time
@@ -11,6 +13,8 @@ import socket
 import sys
 from urllib.request import urlopen
 from urllib.error import HTTPError, URLError
+
+from lxml import html
 
 from odoo import fields, models
 from odoo.tools import config
@@ -265,18 +269,7 @@ class RunbotBuild(models.Model):
                     "bash", "-c", "echo '%(keys)s' | tee -a '%(dir)s'" % dict(
                         keys=ssh_keys, dir="/home/odoo/.ssh/authorized_keys"),
                 ])
-            RunbotBuild._open_url(build.port, build.host)
-            try:
-                pregenerate_assets_cmd = (
-                    "echo \"env['ir.qweb']._pregenerate_assets_bundles(); env.cr.commit()\" | "
-                    "python3 /home/odoo/instance/odoo/odoo-bin shell -d odoo --stop-after-init"
-                )
-                pregenerate_assets_exec_cmd = ['docker', 'exec', '--user', 'odoo', build.docker_container, 'bash', '-c', pregenerate_assets_cmd]
-                result = subprocess.run(pregenerate_assets_exec_cmd, capture_output=True, text=True, check=False, timeout=360)
-                _logger.info("Result for %s _pregenerate_assets_bundles %s", build.docker_container, result)
-            except Exception as e:
-                _logger.error("Failed _pregenerate_assets_bundles assets for %s: %s", build.docker_container, e)
-
+            build._open_url()
         return res
 
     def _get_docker_run_cmd(self):
@@ -340,24 +333,76 @@ class RunbotBuild(models.Model):
             extra_cmd = []
         return extra_cmd
 
-    @staticmethod
-    def _open_url(port, build_host):
+    def _open_url(self):
         """Open url instance in order to generate routing map and static files
-        early.
-         - We need a sleep to wait a full starting of odoo instance
-         - We need to open 2 times the url in order to generate:
-            1. Routing map
-            2. GET / HTTP
+        early and warm up the cache.
         """
-        current_host = fqdn()
-        if current_host != build_host:
-            # There are 2 or more server of runbot and this one is not the
-            # owner of this build.
-            return
-        url = "http://localhost:%(port)s" % dict(port=port)
+
+        url = f"https://{self.domain}"
+
         try:
-            urlopen(url, timeout=3)
-            urlopen(url, timeout=3)
-        except (HTTPError, URLError, socket.timeout,
-                ConnectionResetError) as error:
-            _logger.debug("Error opening instance %s. Error: %s", url, error)
+            s = requests.Session()
+
+            # Get CSRF
+            r = s.get(f"{url}/web/login?utm_source=runbotitself", timeout=120)
+            m_csrf = re.search(r'name="csrf_token"\s+value="([^"]+)"', r.text)
+            if not m_csrf:
+                _logger.debug("Warmup: csrf_token not found on login page for domain %s", self.domain)
+                return
+            csrf = m_csrf.group(1)
+
+            # Login
+            s.post(f"{url}/web/login", data={
+                "db": "odoo",
+                "login": "admin",
+                "password": "admin",
+                "csrf_token": csrf,
+            }, allow_redirects=True, timeout=120)
+
+            # Open webclient to get session_info
+            r = s.get(f"{url}/web", timeout=120)
+            m_session = re.search(
+                r"odoo\.__session_info__\s*=\s*(\{.*?\});",
+                r.text,
+                re.DOTALL,
+            )
+            if not m_session:
+                _logger.debug("Warmup: session_info not found on /web page for domain %s", self.domain)
+                return
+
+            session_info = json.loads(m_session.group(1))
+
+            # Menus
+            menu_url = session_info.get("cache_hashes", {}).get("load_menus")
+            if menu_url:
+                s.get(f"{url}/web/webclient/load_menus/{menu_url}", timeout=120)
+            else:
+                s.get(f"{url}/web/webclient/load_menus", timeout=120)
+
+            tree = html.fromstring(r.text)
+            assets = tree.xpath(
+                "//script[@src]/@src | //link[@href]/@href"
+            )
+            for asset in assets:
+                s.get(f"{url}{asset}", timeout=120)
+
+            # Translations
+            lang = session_info.get("user_context", {}).get("lang", "en_US")
+            try:
+                # odoo 19.0+
+                response = s.get(
+                    f"{url}/web/webclient/translations",
+                    params={"lang": lang},
+                    timeout=120,
+                )
+                response.raise_for_status()
+            except requests.exceptions.HTTPError:
+                # odoo 18.0-
+                s.get(
+                    f"{url}/web/webclient/translations/123456789",
+                    params={"lang": lang},
+                    timeout=120,
+                )
+            _logger.info("Warmup completed for domain %s", self.domain)
+        except Exception as error:
+            _logger.warning("Warmup failed for domain %s: %s", self.domain, error)
