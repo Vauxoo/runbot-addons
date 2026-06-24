@@ -1,0 +1,3 @@
+"id","name","model_id:id","group_id:id","perm_read","perm_write","perm_create","perm_unlink"
+access_fwbot_merge_request,access_fwbot_merge_request,model_fwbot_merge_request,base.group_user,1,0,0,0
+access_fwbot_repository,access_fwbot_repository,model_fwbot_repository,base.group_user,1,1,0,0

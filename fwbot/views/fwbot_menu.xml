@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <menuitem name="Forwardbot" id="root_menu" />
+    <menuitem name="Repositories" id="repository_menu" parent="root_menu" action="fwbot.repository_action" />
+</odoo>

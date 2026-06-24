@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <record id="ir_cron_prune_merge_requests" model="ir.cron">
+        <field name="name">Forwardbot: Prune Merge Requests</field>
+        <field name="model_id" ref="model_fwbot_merge_request" />
+        <field name="state">code</field>
+        <field name="code">model.prune_merge_requests()</field>
+        <field name='interval_number'>1</field>
+        <field name='interval_type'>days</field>
+        <field name="numbercall">-1</field>
+    </record>
+    <record id="ir_cron_sync_branches_gitlab" model="ir.cron">
+        <field name="name">Forwardbot: Synchronize Branches (GitLab)</field>
+        <field name="model_id" ref="model_fwbot_repository" />
+        <field name="state">code</field>
+        <field name="code">model.gitlab_sync_repository_branches()</field>
+        <field name='interval_number'>1</field>
+        <field name='interval_type'>days</field>
+        <field name="numbercall">-1</field>
+    </record>
+    <record id="ir_cron_process_pending_for_fw_gitlab" model="ir.cron">
+        <field name="name">Forwardbot: Process MRs pending a forward port (GitLab)</field>
+        <field name="model_id" ref="model_fwbot_merge_request" />
+        <field name="state">code</field>
+        <field name="code">model.gitlab_process_pending_for_forward_ports()</field>
+        <field name='interval_number'>1</field>
+        <field name='interval_type'>days</field>
+        <field name="numbercall">-1</field>
+    </record>
+</odoo>
