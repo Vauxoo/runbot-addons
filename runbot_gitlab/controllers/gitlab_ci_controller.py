@@ -7,6 +7,8 @@ from odoo import http
 from odoo.addons.runbot.controllers.hook import RunbotHook
 from odoo.http import request
 
+from werkzeug.exceptions import BadRequest
+
 _logger = logging.getLogger(__name__)
 
 
@@ -71,3 +73,22 @@ class RunbotCIController(RunbotHook):
                         forced_build.write({"deployv_image_built": True})
                         forced_build._logger(msg)
         return ""
+
+    @http.route(['/runbot/hook_github/org'], type='json', auth="public", methods=["POST"], website=True, csrf=False)
+    def hook_github(self):
+        data = request.jsonrequest
+        sha = data.get("workflow_job", {}).get("head_sha")
+        if not sha:
+            raise BadRequest("SHA is required")
+
+        build = request.env["runbot.build"].sudo().search([("name", "=", sha)])
+        if not build:
+            raise BadRequest("No build associated with this SHA has been found")
+
+        name = data["workflow_job"].get("name")
+        status = data["workflow_job"].get("status")
+        conclusion = data["workflow_job"].get("conclusion")
+
+        if name == "build_docker" and status == "completed" and conclusion == "success":
+            _logger.info("Github Webhook received. Marking builds %s as received", build.ids)
+            build.write({"deployv_image_built": True})
